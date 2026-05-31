@@ -1,0 +1,29 @@
+{
+  "name": "moju-model-understanding",
+  "version": "1.0.0",
+  "display_name": "MoJu Model Understanding",
+  "description": "How to understand MoJu language and model concepts when drafting models or implementing generated code. Covers domain concepts, generation boundaries, and separation of concerns.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "modeling"],
+  "triggers": {
+    "keywords": [
+      "moju",
+      "model understanding",
+      "domain.mju",
+      "binding.mju",
+      "profile.mju",
+      "moju language",
+      "moju concept"
+    ],
+    "patterns": [
+      "how.*moju.*model.*work",
+      "moju.*domain concept",
+      "what is.*moju"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

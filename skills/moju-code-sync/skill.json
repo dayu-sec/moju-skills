@@ -1,0 +1,29 @@
+{
+  "name": "moju-code-sync",
+  "version": "1.0.0",
+  "display_name": "MoJu Code Sync",
+  "description": "How to sync reviewed MoJu metadata back into code annotations. Covers what to sync, what not to sync, drift handling, and patch discipline.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "synchronization"],
+  "triggers": {
+    "keywords": [
+      "moju code sync",
+      "moju annotations",
+      "moju derive",
+      "code annotation",
+      "moju metadata",
+      "annotation drift"
+    ],
+    "patterns": [
+      "sync.*moju.*code",
+      "add.*moju.*annotation",
+      "update.*moju.*attribute",
+      "code.*annotation.*drift"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

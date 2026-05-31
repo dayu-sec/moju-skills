@@ -1,0 +1,30 @@
+{
+  "name": "moju-model-diff",
+  "version": "1.0.0",
+  "display_name": "MoJu Model Diff",
+  "description": "How to use moju-code diff to analyze model-code differences in 4 categories. Covers command usage, output interpretation, and root cause diagnosis.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "synchronization"],
+  "triggers": {
+    "keywords": [
+      "moju diff",
+      "moju-code diff",
+      "model diff",
+      "model-code diff",
+      "moju align",
+      "diff report",
+      "注解不匹配"
+    ],
+    "patterns": [
+      "diff.*moju",
+      "model.*drift",
+      "what.*different.*model.*code",
+      "check.*model.*code.*consistency"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "moju-model-sync",
+  "version": "1.0.0",
+  "display_name": "MoJu Model Sync",
+  "description": "Rules for syncing model and code after identifying differences via moju-code diff. Covers struct+kind merge, owns maintenance, rename propagation, and sync direction.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "synchronization"],
+  "triggers": {
+    "keywords": [
+      "moju sync",
+      "moju-code align",
+      "model sync",
+      "struct+kind merge",
+      "owns maintenance",
+      "rename propagation",
+      "align --write"
+    ],
+    "patterns": [
+      "sync.*model.*code",
+      "align.*moju",
+      "fix.*diff.*moju",
+      "how.*fix.*model.*mismatch"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

@@ -1,4 +1,14 @@
-# Skill: HTTP Rust Axum
+---
+name: http-rust-axum
+description: How to implement Target<bin,http> / HttpRust skeletons. Covers axum Router construction, message decoding, handler structure, and protocol separation.
+triggers:
+  - implementing HttpRust
+  - Target<bin,http>
+  - axum web server
+  - http rust profile
+---
+
+# HTTP Rust Axum
 
 Use this skill for `profile HttpRust for Target<bin,http>`.
 

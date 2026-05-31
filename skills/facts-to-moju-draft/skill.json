@@ -1,0 +1,30 @@
+{
+  "name": "facts-to-moju-draft",
+  "version": "1.0.0",
+  "display_name": "Facts To MoJu Draft",
+  "description": "How to synthesize a reviewed moju-draft from moju-code extract facts JSON. Covers pipeline, file separation, mapping rules, metadata, and review output.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "reverse-modeling"],
+  "triggers": {
+    "keywords": [
+      "moju extract",
+      "facts to moju",
+      "reverse modeling",
+      "moju draft",
+      "facts.json",
+      "extraction.meta.json"
+    ],
+    "patterns": [
+      "extract.*fact.*code",
+      "convert.*code.*moju",
+      "reverse.*model",
+      "create.*moju.*draft",
+      "synthesize.*moju"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

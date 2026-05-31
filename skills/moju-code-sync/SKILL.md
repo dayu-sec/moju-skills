@@ -1,4 +1,14 @@
-# Skill: MoJu Code Sync
+---
+name: moju-code-sync
+description: How to sync reviewed MoJu metadata back into code annotations. Covers what to sync, what not to sync, drift handling, and patch discipline.
+triggers:
+  - syncing moju metadata to code
+  - adding moju annotations
+  - moju derive macros
+  - code annotation drift
+---
+
+# MoJu Code Sync
 
 Use this skill after a `moju-draft` model has been reviewed, validated, and promoted into `moju/`.
 

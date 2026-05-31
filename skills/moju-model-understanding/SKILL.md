@@ -1,4 +1,15 @@
-# Skill: MoJu Model Understanding
+---
+name: moju-model-understanding
+description: How to understand MoJu language and model concepts when drafting models or implementing generated code. Covers domain concepts, generation boundaries, and separation of concerns.
+triggers:
+  - drafting MoJu models
+  - interpreting MoJu model files
+  - understanding domain.mju
+  - understanding binding.mju
+  - understanding profile.mju
+---
+
+# MoJu Model Understanding
 
 Use this skill before drafting MoJu models or implementing generated code from a MoJu model.
 

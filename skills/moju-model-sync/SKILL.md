@@ -1,0 +1,88 @@
+---
+name: moju-model-sync
+description: Rules for syncing model and code after identifying differences via moju-code diff. Covers struct+kind merge, owns maintenance, rename propagation, and sync direction.
+triggers:
+  - syncing model and code
+  - running moju-code align
+  - fixing diff mismatches
+  - struct+kind merge
+  - module owns maintenance
+---
+
+# MoJu Model Sync
+
+Use this skill when synchronizing MoJu model files with code annotations, after identifying differences via `moju-code diff`.
+
+## Goal
+
+Keep model and code annotations consistent so that `moju-code diff` reports zero differences.
+
+## Source Of Truth
+
+- `moju/model/` is authoritative for reviewed designs.
+- `moju/draft/` is the working area for reverse-modeling from code.
+- Code `#[moju]` annotations are mirrors — update them to match the model.
+
+## Struct+Kind Merge Rule
+
+When code uses a single `state` enum but the model has `struct X { kind: XKind }` + `state XKind`, merge them in the model:
+
+```mju
+// Before (model pattern, does NOT match code)
+struct<domain> Action {
+  kind: ActionKind
+}
+state ActionKind { Call, Create, Emit }
+
+// After (merged, matches code)
+state Action { Call, Create, Emit, ChangeAdd, Goto, Ensure }
+```
+
+Update the owning struct to reference the merged state directly:
+```mju
+struct<domain> Foo {
+  kind: ActionKind  // before
+  kind: Action      // after
+}
+```
+
+## Module Owns Maintenance
+
+- All `owns` for a module must be on a **single line**. The parser only keeps the last `owns` line.
+- Every type defined in `domain.mju` must appear in its module's `owns` list in `architecture.mju`.
+- After merging struct+kind, update owns to list the merged state name.
+
+```mju
+// Correct — single line
+module MoJuBinding {
+  owns Binding, InterfaceBinding, StorageBinding, ConfigBinding, ConfigProvider, ConfigFileFormat
+}
+
+// Wrong — parser only keeps the last line
+module MoJuBinding {
+  owns Binding, InterfaceBinding
+  owns StorageBinding, ConfigBinding
+  owns ConfigProvider, ConfigFileFormat
+}
+```
+
+## Rename Propagation
+
+When renaming a type (e.g., `BindingKind` → `Binding`):
+1. Update `domain.mju`: rename the type definition
+2. Update `architecture.mju`: rename in the module's `owns` list
+3. Update all struct fields that reference the old name
+4. Run `moju-code diff` to verify no new mismatches appear
+
+## Sync Direction
+
+| Scenario | Direction |
+|----------|-----------|
+| Model is authoritative (reviewed design) | Update code annotations via `align --write` |
+| Code is authoritative (reverse-modeling) | Update `moju/draft/` model files |
+| Both changed independently | Review diff, decide case by case, sync the side that's wrong |
+
+## Do Not
+
+- Do not delete model types just to make diff pass. Understand the intent first.
+- Do not add `#[moju]` to types that are pure implementation details (DTOs, DB rows, HTTP handlers).

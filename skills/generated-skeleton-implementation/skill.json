@@ -1,0 +1,28 @@
+{
+  "name": "generated-skeleton-implementation",
+  "version": "1.0.0",
+  "display_name": "Generated Skeleton Implementation",
+  "description": "How to work inside generated Rust skeletons produced by moju-generate. Covers reading order, implementation discipline, and acceptance criteria.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "implementation"],
+  "triggers": {
+    "keywords": [
+      "moju generate",
+      "generated skeleton",
+      "AI_TASKS.md",
+      "skeleton implementation",
+      "moju-gen.json",
+      "MOJU_MODEL.md"
+    ],
+    "patterns": [
+      "implement.*skeleton",
+      "generated.*crate",
+      "moju.*generate.*implement"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

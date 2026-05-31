@@ -1,4 +1,13 @@
-# Skill: Generated Skeleton Implementation
+---
+name: generated-skeleton-implementation
+description: How to work inside generated Rust skeletons produced by moju-generate. Covers reading order, implementation discipline, and acceptance criteria.
+triggers:
+  - implementing generated skeleton
+  - working inside moju-generate output
+  - AI_TASKS.md implementation
+---
+
+# Generated Skeleton Implementation
 
 Use this skill when editing a crate produced by `moju-generate`.
 

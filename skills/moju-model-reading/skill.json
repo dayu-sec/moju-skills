@@ -1,0 +1,28 @@
+{
+  "name": "moju-model-reading",
+  "version": "1.0.0",
+  "display_name": "MoJu Model Reading",
+  "description": "How to read source MoJu model files before implementing code from a generated MoJu skeleton. Covers reading order, authoritative sources, and implementation constraints.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "modeling"],
+  "triggers": {
+    "keywords": [
+      "moju",
+      "model reading",
+      "AI_TASKS.md",
+      "MOJU_MODEL.md",
+      "generated skeleton",
+      "moju implement"
+    ],
+    "patterns": [
+      "how to read.*moju",
+      "implement.*generated.*skeleton",
+      "read.*moju model"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}
