@@ -1,17 +1,18 @@
 ---
 name: facts-to-moju-draft
-description: How to synthesize a reviewed moju-draft from moju-code extract facts JSON. Covers pipeline, file separation, mapping rules, metadata, and review output.
+description: How to synthesize a reviewed moju-draft from moju-code extract facts JSON. Covers pipeline, file separation, mapping rules, semantic merge, rules vs AI boundary, infrastructure field filtering, and review output.
 triggers:
   - converting code to moju model
   - moju-code extract
   - reverse modeling from code
   - creating moju draft
   - facts.json to model
+  - semantic merge model and code
 ---
 
 # Facts To MoJu Draft
 
-Use this skill when converting `moju-code extract` Facts JSON from an existing codebase into a draft MoJu model.
+Use this skill when converting `moju-code extract` Facts JSON from an existing codebase into a draft MoJu model, or when updating an existing model with newly extracted facts.
 
 ## Goal
 
@@ -30,8 +31,67 @@ facts.json + project source
 ## Pipeline
 
 ```
-source code -> moju-code extract -> facts.json -> LLM synthesis -> moju-draft/*.mju -> moju verify -> human review -> merge to moju/
+source code -> moju-code extract -> facts.json -> AI semantic merge -> moju-draft/*.mju -> moju verify -> human review -> merge to moju/
 ```
+
+## Rules vs AI Boundary
+
+This is the core design principle for the pipeline. Split every decision:
+
+### Rules Can Do (deterministic, in tool)
+
+- Parse Java/Rust source into structured data (fields, types, annotations)
+- Map Java types → MoJu types (`String`→`String`, `int`→`Int`, `List<T>`→`List<T>`, `Set<T>`→`List<T>`, `Map<K,V>`→`Map<K,V>`)
+- Extract enum constants, super class names, annotation attributes
+- Format `.mju` syntax from structured data
+- These are **parse → map → format** data pipelines with no semantic judgment
+
+### AI Must Do (semantic judgment, in skill)
+
+- **Field cleaning**: identify and remove infrastructure fields (logger, serialVersionUID, DB timestamps, DI-injected services, internal caches)
+- **Merge decisions**: when model and code disagree on a type's fields, decide which side is authoritative
+- **Naming resolution**: `ConfigInfo4Beta` vs `ConfigInfoBeta` — same concept or different? Decide whether to merge, alias, or keep both
+- **Behavior generation**: deriving flows, caps, failure policies from controller/service code requires understanding architectural intent
+- **Architecture generation**: system topology and module boundaries
+
+### The Split In Practice
+
+```
+Java source
+  ──[moju-code extract: rules]──> facts.json (fields, types, enum values, attrs)
+  ──[AI semantic merge: skill]──> updated domain.mju (cleaned fields, merged items)
+```
+
+Rules produce standardized facts. AI consumes facts and makes decisions.
+
+## Semantic Merge Algorithm
+
+When updating an existing model with extracted facts, do NOT replace — merge:
+
+| Scenario | Action |
+|----------|--------|
+| Item in model, NOT in code | **Keep** — design intent may not have code yet (events, messages, cap result types) |
+| Item in code, NOT in model | **Add** — code is ground truth for new types; use code field names and types |
+| Both, fields differ | **Update** — code field names/types are ground truth; keep model-only design fields |
+| Both, naming differs | **Judge** — decode naming patterns (e.g., `ConfigInfo4Beta` in Java = `ConfigInfoBeta` in model); may alias or merge |
+
+After merge, run `moju verify` to confirm parseability.
+
+## Infrastructure Field Filtering
+
+When extracting fields from Java classes, skip these by default:
+
+| Pattern | Examples | Reason |
+|---------|----------|--------|
+| Logger fields | `logger`, `log`, `LOG`, `LOGGER` | Logging infrastructure |
+| Serialization | `serialVersionUID` | JVM serialization |
+| DB timestamps | `gmtCreate`, `gmtModified`, `createdTime` (Timestamp type) | ORM auto-managed |
+| Surrogate keys | `id` (only when auto-generated Long/int) | DB infrastructure |
+| DI fields | Fields annotated with `@Autowired`, `@Inject`, `@Resource` | Runtime injection |
+| Enum serialization | `value` field in enums used for Jackson mapping | Serialization helper |
+| JVM synthetic | Fields starting with `_` | Compiler-generated |
+
+These are heuristics. When in doubt, keep the field and add a note in `review.md`.
 
 ## File Separation
 
@@ -51,24 +111,50 @@ source code -> moju-code extract -> facts.json -> LLM synthesis -> moju-draft/*.
 - Only a reviewed model copied into `moju/` is authoritative.
 - Do not invent routes, protocols, storage adapters, permissions, or business decisions as confirmed facts.
 - If inference is useful but uncertain, include it in the draft and mark it in metadata/review as inferred.
+- **Code fields are ground truth for names and types** — when model and code disagree on a field, prefer the code version unless the model field represents a design concept not yet implemented.
 
 ## Mapping Rules
 
-- `type_defs` with `#[moju(kind = "struct")]` maps to `struct<domain>`.
-- `type_defs` with `#[moju(kind = "state")]` maps to `state`.
+- `type_defs` with `#[moju(kind = "struct")]` (Rust) or `@MoJu(kind = "struct")` (Java) maps to `struct<domain>`.
+- `type_defs` with `#[moju(kind = "state")]` (Rust) or `@MoJu(kind = "state")` (Java) maps to `state`. Enum constants become state variants.
 - `type_defs` with `#[moju(kind = "event")]` maps to `event`.
 - `type_defs` with `#[moju(kind = "message", role = "command")]` maps to `message<command>`.
 - `type_defs` with `#[moju(kind = "message", role = "response")]` maps to `message<response>`.
-- `type_defs` with `#[moju(kind = "failure", ...)]` maps to `failure` with identity hierarchy.
+- `type_defs` with `#[moju(kind = "failure", ...)]` maps to `failure` with identity hierarchy. `super_type` becomes `: ParentFailure`.
 - `type_defs` with `#[moju(kind = "actor", ...)]` maps to `actor` with parent chain.
 - `type_defs` with `#[moju(kind = "storage", ...)]` maps to `storage` with kind and durability.
-- `moju_annotations` provide the authoritative kind/role/domain for each type.
+- `moju_annotations` provide the authoritative kind/role/domain for each type (from `#[moju]` in Rust or `@MoJu` in Java).
+- Java `@MoJu` annotation attributes (`kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`) carry the same metadata as Rust `#[moju(...)]`.
+- Java enums annotated with `@MoJu(kind = "state")` map to `state` just as Rust enums do.
 - Trait definitions under `domain/caps/` map to `cap` with `op` for each method signature.
 - `state_writes` and `state_guards` can suggest `lifecycle` transitions, but should be marked inferred.
-- The checkout/application flow code maps to `flow` with `step` breakdown.
-- Package/module structure maps to `module` when it reflects stable responsibility boundaries.
-- Config structs (e.g., `*Config`) map to `struct<config>`.
+- Config structs/records (e.g., `*Config`, `*Properties`) map to `struct<config>`.
 - Failure type hierarchy (e.g., `StripePaymentFailure : PaymentGatewayFailure`) maps to `failure Child : Parent`.
+
+## Java Type Mapping Table
+
+| Java Type | MoJu Type |
+|-----------|-----------|
+| `String` | `String` |
+| `int`, `Integer`, `long`, `Long`, `short`, `Short`, `byte`, `Byte` | `Int` |
+| `boolean`, `Boolean` | `Bool` |
+| `float`, `Float`, `double`, `Double` | `Float` |
+| `byte[]`, `Byte[]` | `Bytes` |
+| `List<T>` | `List<T>` |
+| `Set<T>` | `List<T>` |
+| `Map<K,V>` | `Map<K,V>` |
+| `Optional<T>` | `T?` |
+| Other objects | PascalCase class name (strip package) |
+
+## Naming Conflict Resolution
+
+When code and model use different names for the same concept:
+
+1. Check if they represent the same DB table / API contract
+2. Common pattern: Java DTO uses `ConfigInfo4Beta`, model uses `ConfigInfoBeta`
+3. If same concept: use the model's name as primary, note Java name in a comment
+4. If different concepts (e.g., one extends another): keep both, note the relationship
+5. If unsure: keep both, add to `review.md` for human decision
 
 ## Metadata
 

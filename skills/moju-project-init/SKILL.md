@@ -10,7 +10,7 @@ triggers:
 
 # MoJu Project Init
 
-Use this skill when setting up MoJu modeling for a new or existing Rust project.
+Use this skill when setting up MoJu modeling for a new or existing Rust or Java project.
 
 ## Goal
 
@@ -47,8 +47,10 @@ If `moju/draft/` was previously committed, remove and re-gitignore it.
 
 ## Tool Chain
 
+Works for both Rust and Java projects. `moju-code extract` auto-detects project type (Rust via `src/*.rs`, Java via `pom.xml`).
+
 ```
-source code
+source code (Rust or Java)
   -> moju-code extract -> facts.json
   -> LLM synthesis (facts-to-moju-draft skill) -> moju/draft/*.mju
   -> moju verify moju/draft
@@ -58,12 +60,15 @@ source code
   -> moju-code diff (verify zero differences)
 ```
 
+For Java extraction, the tool requires JDK 17+ and Maven. The `java-extract/` Maven project is auto-built on first use.
+
 ## resolve_project_root Behavior
 
 The tool detects a project root by checking in order:
 1. Directory containing `moju/` or `moju-model/`
-2. Directory containing `Cargo.toml` + `src/`
-3. Parent directories upward
+2. Directory containing `Cargo.toml` + `src/` (Rust project)
+3. Directory containing `pom.xml` + `src/` (Java project)
+4. Parent directories upward
 
 ## resolve_model_root Behavior
 

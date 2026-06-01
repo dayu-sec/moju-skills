@@ -32,9 +32,9 @@ Use this skill before drafting MoJu models or implementing generated code from a
 
 - `target<kind,protocol>` selects a generation target shape. It does not name a concrete service like `CheckoutService`.
 - `profile Name for Target<kind,protocol>` maps target shape to implementation strategy.
-- Framework choices such as `axum`, `tokio`, and `serde` belong in profile/generation strategy, not in `domain.mju`.
+- Framework choices such as `axum`/`tokio` (Rust) or `Spring Boot`/`JPA` (Java) belong in profile/generation strategy, not in `domain.mju`.
 - Route paths, HTTP methods, statuses, storage adapters, actor identity mapping, transactions, and external capability adapter bindings belong in `binding.mju`.
-- Generated code should preserve the separation between API/protocol, app orchestration, domain types, and infra adapters.
+- Generated code should preserve the separation between API/protocol, app orchestration, domain types, and infra adapters. In Java this maps to: `api/` (controllers), `service/` (business logic), `domain/` (records, enums), `repository/` (data access).
 
 ## Do
 
@@ -42,10 +42,11 @@ Use this skill before drafting MoJu models or implementing generated code from a
 - Use qualified names when reasoning across domains.
 - Treat generated summaries as navigation aids only.
 - Preserve response statuses and storage adapter providers declared in `binding.mju`.
-- Use MoJu names as the source vocabulary for generated Rust types, modules, traits, and handlers.
+- Use MoJu names as the source vocabulary for generated types, modules/classes, traits/interfaces, and handlers (in Rust or Java).
+- In Java, `@MoJu` annotations carry the same metadata as Rust `#[moju(...)]` — both are generated from the model and should be preserved.
 
 ## Do Not
 
 - Do not infer unmodeled permissions, routes, status codes, storages, or capabilities as confirmed facts.
-- Do not move framework choices such as `axum`, `tokio`, or `serde` into `domain.mju`.
+- Do not move framework choices such as `axum`, `tokio`, `Spring Boot`, or `JPA` into `domain.mju`.
 - Do not treat `MOJU_MODEL.md` as more authoritative than the source model.

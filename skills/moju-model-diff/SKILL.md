@@ -22,9 +22,11 @@ Quickly see what has drifted between model and code, using `moju-code diff` to p
 mojo-code diff <project-path> [--model <model-path>]
 ```
 
+Works for both Rust and Java projects. The command auto-detects project type.
+
 The command:
 1. Runs `align` to compare model specs against code annotations (finds mismatches + missing annotations)
-2. Runs `extract` to get all code-level facts (all Rust types, all `#[moju]` annotations)
+2. Runs `extract` to get all code-level facts (all types, all `#[moju]` / `@MoJu` annotations)
 3. Cross-references the two to produce a 4-category report
 
 ## Output Categories

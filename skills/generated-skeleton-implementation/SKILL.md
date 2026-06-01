@@ -18,22 +18,34 @@ Use this skill when editing a crate produced by `moju-generate`.
 - `.moju-gen.json`
 - source MoJu model directory referenced by `AI_TASKS.md`
 
-## Do
+## Rust Projects
 
 - Keep `cargo check` passing after each implementation slice.
 - Preserve generated module layout unless there is a reviewed reason to change it.
-- Preserve MoJu metadata comments and derive attributes.
+- Preserve MoJu metadata comments and derive attributes (`#[derive(MoJu)]`, `#[moju(...)]`).
 - Prefer implementing behind generated traits and modules instead of bypassing them.
+
+## Java Projects
+
+- Keep `mvnw compile` passing after each implementation slice.
+- Preserve generated package layout (`api/`, `service/`, `domain/`, `repository/`).
+- Preserve `@MoJu` annotations on all generated domain types.
+- Use constructor injection for service and repository dependencies.
+- Prefer implementing behind generated interfaces instead of bypassing them.
+
+## Do
+
 - Leave explicit TODOs only where an external service, credential, schema, or policy decision is missing.
 
 ## Do Not
 
 - Do not remove `.moju-gen.json`.
 - Do not rename public generated types without updating MoJu or the generated task files.
-- Do not collapse API, app, domain, and infra layers into one module.
+- Do not collapse API, app, domain, and infra layers into one module / package.
+- For Java: do not remove `@MoJu` annotations or change generated package structure.
 
 ## Acceptance
 
-- The crate compiles.
+- The crate compiles (`cargo check` or `mvnw compile`).
 - Public behavior still matches `AI_TASKS.md`.
 - Any remaining TODOs are narrow and tied to missing external decisions.

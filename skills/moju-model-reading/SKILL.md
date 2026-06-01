@@ -27,15 +27,16 @@ The source MoJu files are authoritative:
 - `moju/<domain>/domain.mju`
 - `moju/<domain>/binding.mju`
 
-Generated Rust code and `MOJU_MODEL.md` may be stale or incomplete.
+Generated code (Rust or Java) and `MOJU_MODEL.md` may be stale or incomplete.
 
 The MoJu language and model semantics are summarized in `moju-model-understanding`; use that skill to interpret the source model during implementation.
 
 ## Do
 
-- Preserve MoJu names when mapping to Rust modules, structs, handlers, and traits.
+- Preserve MoJu names when mapping to code: Rust modules/structs/traits or Java packages/records/interfaces.
 - Treat `interface`, `message`, `flow`, `storage`, and `binding` as implementation constraints.
 - Keep response status codes, route paths, and adapter providers aligned with `binding.mju`.
+- In Java projects: follow the `http-java-spring-boot` skill for controller/service/repository patterns.
 
 ## Do Not
 

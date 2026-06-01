@@ -70,7 +70,7 @@ When code changes first and the model needs to catch up:
 
 ## Align --Write Safety
 
-`align --write` modifies source code in place. Before running:
+`align --write` modifies source code in place (Rust or Java). Before running:
 
 - Commit or stash current changes
 - Review the diff output first to understand what will change
@@ -83,6 +83,8 @@ mojo-code align <project-path> --check
 # Apply changes
 mojo-code align <project-path> --write
 ```
+
+Works for both Rust and Java projects. For Java, `align --write` updates `@MoJu` annotations on generated classes.
 
 ## Common Loop Pitfalls
 

@@ -1,0 +1,29 @@
+{
+  "name": "moju-java-extract",
+  "version": "1.0.0",
+  "display_name": "MoJu Java Extract",
+  "description": "How to extract MoJu facts from Java projects with @MoJu annotations. Covers multi-module Maven/Gradle support, Java type mapping, infrastructure field filtering, and the moju-code extract pipeline for Java.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "java", "extraction"],
+  "triggers": {
+    "keywords": [
+      "moju java extract",
+      "java facts",
+      "java moju annotations",
+      "javaextractor",
+      "moju-code extract java",
+      "@MoJu annotation extract"
+    ],
+    "patterns": [
+      "extract.*java.*moju",
+      "java.*facts.*json",
+      "scan.*java.*annotations",
+      "moju.*java.*extract"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

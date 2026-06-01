@@ -21,7 +21,7 @@ Keep model and code annotations consistent so that `moju-code diff` reports zero
 
 - `moju/model/` is authoritative for reviewed designs.
 - `moju/draft/` is the working area for reverse-modeling from code.
-- Code `#[moju]` annotations are mirrors — update them to match the model.
+- Code annotations are mirrors — update them to match the model. In Rust: `#[moju(...)]`. In Java: `@MoJu(...)`.
 
 ## Struct+Kind Merge Rule
 
@@ -85,4 +85,4 @@ When renaming a type (e.g., `BindingKind` → `Binding`):
 ## Do Not
 
 - Do not delete model types just to make diff pass. Understand the intent first.
-- Do not add `#[moju]` to types that are pure implementation details (DTOs, DB rows, HTTP handlers).
+- Do not add `#[moju]` (Rust) or `@MoJu` (Java) to types that are pure implementation details (DTOs, DB rows, HTTP handlers/controllers).

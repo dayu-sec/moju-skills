@@ -45,6 +45,26 @@ pub struct SubmitOrder {
 }
 ```
 
+For Java, use `@MoJu` annotations:
+
+```java
+@MoJu(kind = "message", role = "command", domain = "Business")
+public record SubmitOrder(
+    String id,
+    String customerId
+) {}
+```
+
+```java
+@MoJu(kind = "storage", storageKind = "postgres", domain = "Business")
+public record Order(
+    @Id Long id,
+    String status
+) {}
+```
+
+The Java `@MoJu` annotation carries the same metadata fields: `kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`.
+
 ## What Not To Sync By Default
 
 Do not push these into ordinary type annotations unless a dedicated code construct exists:
@@ -55,7 +75,7 @@ Do not push these into ordinary type annotations unless a dedicated code constru
 - storage adapter providers such as `postgres`, `redis`, `kafka`
 - config file paths and secret sources
 - design decisions and rejected options
-- generation profile choices such as `axum`, `tokio`, or `serde`
+- generation profile choices such as `axum`, `tokio`, `Spring Boot`, or `JPA`
 
 These remain in `moju/`, `binding.mju`, or `profile.mju`.
 
