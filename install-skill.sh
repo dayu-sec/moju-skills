@@ -37,6 +37,8 @@ Available skills:
   moju-project-init        — set up MoJu directory structure
   generated-skeleton-implementation — work inside generated Rust skeletons
   http-rust-axum           — implement HttpRust skeletons
+  http-java-spring-boot    — implement Java Spring Boot skeletons
+  moju-java-extract        — extract MoJu facts from Java @MoJu annotations
 EOF
 }
 
@@ -51,6 +53,8 @@ ALL_SKILLS=(
   moju-project-init
   generated-skeleton-implementation
   http-rust-axum
+  http-java-spring-boot
+  moju-java-extract
 )
 
 skill_names=()
