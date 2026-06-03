@@ -151,26 +151,9 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 
 When `facts.struct_methods` is present, the AI must select up to **5 methods per struct** to become `op` declarations. The extractor dumps all qualifying methods; the AI picks which ones express "this struct handles these business facts."
 
-### Selection Heuristics (high to low signal)
+Selection is based on the AI's understanding of business context — method names, parameter types, and the struct's role in the domain. Do not use mechanical heuristics.
 
-| Priority | Signal | Example |
-|----------|--------|---------|
-| P0 — Certain | Implements `Handler<Event>` trait | `impl Handler<InventoryReserved> for Inventory` |
-| P1 — Strong | Method name matches `handle_*`, `on_*`, `apply_*`, and param types are domain types | `fn handle_reserved(&mut self, cart: &Cart, items: &[CartItem])` |
-| P2 — Medium | `&mut self` + called from a flow/service layer (call-graph upwards) | Methods invoked in transaction/service orchestration |
-| P3 — Weak | `&mut self` + complex params, but name is generic | `fn process(&mut self, ctx: &Context)` |
-
-### Exclusion Rules
-
-- Methods returning `&self` (getters, queries) — skip
-- Methods with only primitive params (`i32`, `String`, `bool`) and no business-sounding name — skip
-- Private methods only called internally — skip
-- `fn new()`, `fn default()`, `fn clone()` — skip
-- Methods on config structs — skip
-
-### Output Format
-
-Selected methods become `op` declarations on the struct:
+Each selected method becomes an `op` declaration:
 
 ```mju
 struct<domain> Inventory {
@@ -183,16 +166,11 @@ struct<domain> Inventory {
 }
 ```
 
-- Method name `handle_reserved` → event name `InventoryReserved` (strip `handle_`/`on_`/`apply_` prefix, PascalCase the rest)
-- If method name is already the event name, use as-is
-- If `Handler<Event>` trait impl, use `Event` name directly
+- Derive event name from method name: `handle_reserved` → `InventoryReserved`
 - Default to `op<sync>` unless the method returns a `Future` or is in an async context — then use `op<async>`
-
-### Confidence Metadata
 
 For each selected op, record in `extraction.meta.json`:
 - `source_method`: the original method name
-- `signal`: `trait_impl` / `name_match` / `call_graph` / `ai_inferred`
 - `confidence`: `high` / `medium`
 
 ## Naming Conflict Resolution
