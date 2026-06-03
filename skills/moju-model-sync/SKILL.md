@@ -103,11 +103,13 @@ MoJu flows can only reference types defined in the **same domain**. Using a type
 
 ## Sync Direction
 
-| Scenario | Direction |
-|----------|-----------|
-| Model is authoritative (reviewed design) | Update code annotations via `align --write` |
-| Code is authoritative (reverse-modeling) | Update `moju/draft/` model files |
-| Both changed independently | Review diff, decide case by case, sync the side that's wrong |
+Model is the single source of truth. Sync always goes **model → code**:
+
+```
+moju/model/  ──align──>  code annotations
+```
+
+If the model needs to change to reflect new code realities, update the model first (via `moju/draft/` → `moju verify` → promote), then align code. Never use `moju-code diff` output to bypass the model and edit code annotations directly.
 
 ## Do Not
 

@@ -1,108 +1,71 @@
 ---
 name: moju-align-loop
-description: Capability design feedback loop — edit model, diff, align, iterate. Covers model-first and code-first flows, align --write safety, and common loop pitfalls.
+description: How to align code annotations to the MoJu model. Covers the one-way alignment loop, diff diagnosis, and common pitfalls.
 triggers:
-  - design iteration loop
-  - model-first design
-  - code-first reverse modeling
-  - align --write workflow
-  - model-code feedback loop
+  - model-code alignment
+  - moju-code diff
+  - moju-code align
+  - code annotations out of sync
 ---
 
 # MoJu Align Loop
 
-Use this skill during capability design iterations — the feedback loop between editing model files and aligning code annotations.
+Use this skill to align code annotations with the MoJu model. The model is the single source of truth.
 
-## Goal
+## Direction
 
-Keep model and code in sync during design work so that each iteration starts from a clean baseline.
+```
+model (authoritative)  ──align──>  code annotations (mirror)
+```
+
+Never the reverse. If code has changed in a way that should be reflected in the model, update the model first (via `moju/draft/` → `moju verify` → promote to `moju/model/`), then align code to it.
 
 ## The Loop
 
 ```
-edit model  -->  moju-code diff  -->  review gaps  -->  align --write
-    ^                                                       |
-    |                                                       |
-    +-------------------------------------------------------+
-                       (or reverse direction)
+moju-code diff  →  review gaps  →  fix model (if needed)  →  moju verify  →  moju-code align --write  →  cargo check
+       ↑                                                                                                          |
+       +----------------------------------------------------------------------------------------------------------+
 ```
 
-## Model-First Flow (Designing New Capability)
+| Step | Command | What it does |
+|------|---------|-------------|
+| 1. diff | `moju-code diff <project>` | Show what's out of sync between model and code annotations |
+| 2. review | read the diff output | Decide: is the model wrong, or is the code missing annotations? |
+| 3. fix model | edit `moju/draft/` | If the model needs updating: add/remove types, fix fields, update module owns |
+| 4. verify | `moju verify` | Ensure `.mju` files parse, flow references resolve, owns are complete |
+| 5. align | `moju-code align <project> --write` | Push model metadata (`kind`, `domain`, `module`) into code as `#[moju]` annotations |
+| 6. check | `cargo check` / `mvnw compile` | Ensure annotated code compiles |
 
-When designing a new feature starting from the model:
+If step 2 determines the model is already correct and only annotations are missing, skip steps 3-4 and go directly to align.
 
-1. **Edit model files** (`moju/draft/` or `moju/model/`)
-   - Add new types, messages, flows, actors, etc.
-   - Update `architecture.mju` module owns
+## Diff Output Categories
 
-2. **Run diff** to see what code is missing
-   ```bash
-   moju-code diff <project-path>
-   ```
-   Focus on "模型有、代码无注解" — these are types to implement or annotate.
+| Category | Meaning | Action |
+|----------|---------|--------|
+| 注解不匹配 | Model says one thing, code annotation says another | Model is correct — align to fix the annotation |
+| 模型有、代码无 | Type exists in model but has no `#[moju]` in code | Run `align --write` to add annotations |
+| 代码已注解、模型无 | Code has `#[moju]` but model has no matching type | If the type should be modeled, add it to draft first; otherwise remove the code annotation |
+| 代码无注解、模型也无 | Type in code without annotation, not in model | Decide if it should be modeled; if yes, add to draft first |
 
-3. **Implement code** for new types, adding `#[moju]` annotations
-
-4. **Verify sync**
-   ```bash
-   moju-code align <project-path> --check
-   ```
-   Should report no changes needed. If not, fix annotations.
-
-## Code-First Flow (Reverse-Modeling)
-
-When code changes first and the model needs to catch up:
-
-1. **Edit code** (add/remove types, change fields)
-
-2. **Run diff** to see model gaps
-   ```bash
-   moju-code diff <project-path>
-   ```
-   Focus on "代码已注解、模型无" — these need model entries.
-
-3. **Update model** to match code:
-   - Add missing types to `domain.mju`
-   - Update `architecture.mju` owns
-   - Apply struct+kind merge if needed
-
-4. **Run diff again** — should converge to zero
-
-## Align --Write Safety
-
-`align --write` modifies source code in place (Rust or Java). Before running:
-
-- Commit or stash current changes
-- Review the diff output first to understand what will change
-- Run `--check` first to preview without writing
-
-```bash
-# Safe preview
-moju-code align <project-path> --check
-
-# Apply changes
-moju-code align <project-path> --write
-```
-
-Works for both Rust and Java projects. For Java, `align --write` updates `@MoJu` annotations on generated classes.
-
-## Common Loop Pitfalls
+## Common Pitfalls
 
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
-| "模型有、代码无" shows types that exist in code | Type name mismatch between model and code | Rename one side to match |
-| align adds `module = ""` to annotations | Empty module field in model or code | Check model's `module` attribution |
-| Same diff entries persist after sync | Multi-line owns in architecture.mju | Merge owns onto single line |
+| "模型有、代码无" for types that exist | Type name mismatch between model and code | Rename one side to match (model is authoritative) |
+| align adds `module = ""` | Empty module field | Check model's module attribution in architecture.mju |
+| Same diff entries persist after align | Multi-line owns in architecture.mju | Merge owns onto single line |
 | align removes annotations | Model no longer owns the type | Add type to module's owns list |
+| `#[serde]` before `#[derive]` error (edition 2024) | Derive helper attributes out of order | `#[derive]` must come before `#[serde]` |
 
 ## Do
 
-- Run `diff` at the start and end of every design session.
-- Commit after reaching zero differences as a checkpoint.
-- Use `--check` before `--write` when modifying code annotations.
+- Model is always the source of truth. Change it first, then align code.
+- Run `diff` before and after every alignment session.
+- Use `--check` before `--write` to preview changes.
 
 ## Do Not
 
+- Do not align code → model. The model is authoritative.
 - Do not run `align --write` on uncommitted code.
-- Do not ignore persistent diff entries — each one indicates a real inconsistency.
-- Do not edit both model and code simultaneously without running diff in between.
+- Do not edit both model and code simultaneously — always pick a direction for each change.
