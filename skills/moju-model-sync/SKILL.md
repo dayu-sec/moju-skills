@@ -76,31 +76,30 @@ When renaming a type (e.g., `BindingKind` → `Binding`):
 
 ## Module Split Rules
 
-When a module's `owns` list grows too large (>15 items), split by business sub-domain, not by technical file layout:
+When a module's `owns` list grows too large, split by **business responsibility**, not by technical file layout:
 
-| Anti-Pattern | Correct |
-|-------------|---------|
-| `LangAst` owns 47 types (all AST nodes) | Split into `LangRule` (rule decl), `LangMatch` (match clauses), `LangExpr` (expressions), `LangJoin` (joins), `LangConv` (conversions), `LangTest` (test contracts) |
-| `ConfigLoader` owns 26 types (all config) | Split into `WindowConfig`, `SourceConfig`, `LoggingMetrics` |
-| Multiple modules own the same type | Each type belongs to exactly one module |
+- **Threshold**: If a module owns >15 types, consider splitting
+- **Grouping principle**: Types that change together belong together. Types in the same business sub-domain (e.g., all "match clause" concepts) form a natural module
+- **Granularity**: Each module should represent a single business capability. Avoid catch-all modules named after technical layers
+- **Uniqueness**: Each type belongs to exactly one module. If two modules need the same type, the type likely belongs in a shared lower-layer module
 
 ### Owns Completeness Check
 
 Every item in `domain.mju` must appear in exactly one module's `owns` in `architecture.mju`:
 
 - `struct` / `state` / `command` / `actor` — all must be owned
-- `event` (trigger messages) — owned by the Interface layer module
+- Trigger `command` types — owned by the Interface layer module
 - Error states (`*Reason`) — owned by the most relevant domain module
 
-Run `moju verify` after each architecture change to catch missing owns.
+Run `moju verify` after each architecture change. If a type is referenced in a flow but not owned by any module, verification will catch it.
 
 ## Cross-Domain Reference Limits
 
-MoJu flows can only reference types within the same domain. Cross-domain references like `create Config.FusionConfig {}` in an orchestra flow will fail `moju verify` with `not defined`.
+MoJu flows can only reference types defined in the **same domain**. Using a type from another domain (e.g., `create OtherDomain.SomeType {}`) will fail `moju verify` with `not defined`.
 
 - Flows describe **intra-domain** orchestration
 - Inter-domain dependencies are expressed via `dependency_rule` in `architecture.mju`
-- If a flow needs types from another domain, model the interaction as a `command` trigger rather than a direct create
+- If a flow needs to interact with another domain's types, model it as a `command` trigger to a flow in that domain, rather than directly creating cross-domain types
 
 ## Sync Direction
 
