@@ -51,6 +51,9 @@ This is the core design principle for the pipeline. Split every decision:
 - **Field cleaning**: identify and remove infrastructure fields (logger, serialVersionUID, DB timestamps, DI-injected services, internal caches)
 - **Merge decisions**: when model and code disagree on a type's fields, decide which side is authoritative
 - **Naming resolution**: `ConfigInfo4Beta` vs `ConfigInfoBeta` — same concept or different? Decide whether to merge, alias, or keep both
+- **Struct op selection**: from a dump of all qualifying methods, pick up to 5 per struct that express "this struct handles these business facts"
+- **Domain clustering**: use `struct_relations` density to decide which structs belong in the same domain directory
+- **Scenario inference**: use `struct_relations` direction (op_param edges) to infer message flow between structs
 - **Behavior generation**: deriving flows, caps, failure policies from controller/service code requires understanding architectural intent
 - **Architecture generation**: system topology and module boundaries
 
@@ -128,7 +131,8 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 - Java enums annotated with `@MoJu(kind = "state")` map to `state` just as Rust enums do.
 - Trait definitions under `domain/caps/` map to `cap` with `op` for each method signature.
 - `state_writes` and `state_guards` can suggest `lifecycle` transitions, but should be marked inferred.
-- `struct_methods` contains all pub/pub(crate) methods with `&mut self` on each struct. AI selects up to 5 per struct to become `op` declarations.
+- `struct_methods` contains all qualifying instance methods on each struct (Rust: `pub`/`pub(crate)` + `&mut self`; Java: public instance with params, excluding getters/setters). AI selects up to 5 per struct to become `op` declarations.
+- `struct_relations` contains directed edges between structs. `signal`: `field` (A holds B in a field) or `op_param` (A's method receives B-type param). Extra detail: `Handler<Event>` trait impls (Rust) and `@EventListener` annotations (Java) are tagged in the detail field. AI uses this graph for domain clustering and scenario inference.
 - Config structs/records (e.g., `*Config`, `*Properties`) map to `struct<config>`.
 - Failure type hierarchy (e.g., `StripePaymentFailure : PaymentGatewayFailure`) maps to `failure Child : Parent`.
 
@@ -172,6 +176,68 @@ struct<domain> Inventory {
 For each selected op, record in `extraction.meta.json`:
 - `source_method`: the original method name
 - `confidence`: `high` / `medium`
+
+## Struct Relations Analysis
+
+When `facts.struct_relations` is present, the AI has a directed graph of struct-to-struct references. Use this graph for four analyses:
+
+### 1. Domain Clustering
+
+Relations with high density form a natural domain boundary. The AI groups structs into domain directories based on connection density:
+
+```
+High density cluster → same domain/ directory
+  Order ←→ PaymentIntent ←→ Cart ←→ Inventory
+  → moju-draft/business/
+
+Sparse / isolated → config or cross-cutting
+  RunPolicy (0 relations) → moju-draft/business/ as struct<config>
+  HttpServerConfig (0 relations) → moju-draft/business/ as struct<config>
+```
+
+AI uses its own judgment to decide the right domain names and boundaries. Do not hardcode "Business" for all clusters — infer domain names from the struct names in each cluster.
+
+### 2. Scenario Inference
+
+When a struct's `op_param` edges point to event types defined in other structs, this reveals message flow. The AI can infer `scenario` blocks:
+
+```
+Relations:
+  Order → (op_param) → PaymentSucceeded → PaymentIntent  (Order handles PaymentIntent's event)
+  PaymentIntent → (op_param) → OrderCreated → ConfigHistoryInfo
+  Inventory → (op_param) → InventoryReserved → Cart
+
+AI infers:
+  scenario PlaceOrder {
+    Cart send InventoryReserved → Inventory
+    PaymentIntent send PaymentSucceeded → Order
+    PaymentIntent send PaymentSucceeded → ConfigHistoryInfo
+  }
+```
+
+The relation graph gives direction (who handles whose event) but not ordering. AI uses business understanding to sequence the steps. The scenario name is inferred from the cluster context.
+
+### 3. Modeling Prioritization
+
+Sort structs by connection count to determine which to model first:
+
+```
+Order            ← 6 relations → model first, core aggregate
+PaymentIntent    ← 4 relations
+Inventory        ← 3 relations
+Cart             ← 2 relations
+RunPolicy        ← 0 relations → model last, likely config
+```
+
+### 4. Missing Struct Detection
+
+When an `op_param` or `Handler<Event>` edge references a type not in `type_defs`, flag it:
+
+```
+PaymentSucceeded event references ProviderRef
+  → ProviderRef not in type_defs
+  → AI adds to review.md: "可能缺失 struct ProviderRef"
+```
 
 ## Naming Conflict Resolution
 
