@@ -19,7 +19,7 @@ Quickly see what has drifted between model and code, using `moju-code diff` to p
 ## Command
 
 ```bash
-mojo-code diff <project-path> [--model <model-path>]
+moju-code diff <project-path> [--model <model-path>]
 ```
 
 Works for both Rust and Java projects. The command auto-detects project type.

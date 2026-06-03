@@ -34,6 +34,41 @@ facts.json + project source
 source code -> moju-code extract -> facts.json -> AI semantic merge -> moju-draft/*.mju -> moju verify -> human review -> merge to moju/
 ```
 
+### Rust Projects Without `#[moju]` Annotations
+
+`moju-code extract` for Rust requires `#[moju(kind = "...", domain = "...")]` annotations on types. Without them, `extract` returns `type_defs: 0`. In this case:
+
+1. **Manually curate facts.json**: Create `type_defs` entries with `name`, `file`, `mod_path`, `kind`, `fields`, `variants` based on reading the Rust source directly.
+2. **Use AI code analysis**: Read Rust source files to understand struct fields, enum variants, and type relationships.
+3. **Minimal facts schema**: At minimum, each entry needs `name` (with `mod_path::` prefix), `file`, and `mod_path`. For semantic merge, also add `kind` (`struct`/`state`), `fields` (array of field names), and `variants` (for state enums).
+4. **After first model is created**: Use `moju-code align --write` to add `#[moju]` annotations back to code, so future extractions work automatically.
+
+Example minimal facts.json for a Rust project without annotations:
+
+```json
+{
+  "type_defs": [
+    {
+      "name": "fusion::FusionConfig",
+      "file": "src/fusion.rs",
+      "mod_path": "fusion",
+      "kind": "struct",
+      "fields": ["mode", "runtime", "window_defaults", "windows", "sinks", "sources"]
+    },
+    {
+      "name": "error::ConfigReason",
+      "file": "src/error.rs",
+      "mod_path": "error",
+      "kind": "state",
+      "variants": ["Load", "Parse", "Validation", "Path", "General"]
+    }
+  ],
+  "moju_annotations": [],
+  "state_writes": [],
+  "state_guards": []
+}
+```
+
 ## Rules vs AI Boundary
 
 This is the core design principle for the pipeline. Split every decision:
@@ -130,6 +165,7 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 - Java `@MoJu` annotation attributes (`kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`) carry the same metadata as Rust `#[moju(...)]`.
 - Java enums annotated with `@MoJu(kind = "state")` map to `state` just as Rust enums do.
 - Trait definitions under `domain/caps/` map to `cap` with `op` for each method signature.
+- **Rust `trait` is not valid MoJu syntax**. Rust traits map to MoJu `cap` (capability) definitions in `behavior.mju`. Do NOT write `trait X { ... }` in `.mju` files — it will fail `moju verify`.
 - `state_writes` and `state_guards` can suggest `lifecycle` transitions, but should be marked inferred.
 - `struct_methods` contains all qualifying instance methods on each struct (Rust: `pub`/`pub(crate)` + `&mut self`; Java: public instance with params, excluding getters/setters). AI selects up to 5 per struct to become `op` declarations.
 - `struct_relations` contains directed edges between structs. `signal`: `field` (A holds B in a field) or `op_param` (A's method receives B-type param). Extra detail: `Handler<Event>` trait impls (Rust) and `@EventListener` annotations (Java) are tagged in the detail field. AI uses this graph for domain clustering and scenario inference.

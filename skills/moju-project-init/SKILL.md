@@ -83,21 +83,30 @@ For an existing codebase without a model:
 
 ```bash
 # 1. Extract facts from code
-mojo-code extract <crate-path>
+moju-code extract <crate-path>
 
 # 2. Synthesize draft model (use facts-to-moju-draft skill)
 # 3. Verify draft parses
-mojo verify moju/draft
+moju verify moju/draft
 
 # 4. Review and promote to model/
 cp -r moju/draft/domain moju/model/domain
 
 # 5. Sync annotations back to code
-mojo-code align <crate-path> --write
+moju-code align <crate-path> --write
 
 # 6. Verify zero differences
-mojo-code diff <crate-path>
+moju-code diff <crate-path>
 ```
+
+### Rust Projects Without `#[moju]` Annotations
+
+For Rust projects that don't yet have MoJu annotations on types, `moju-code extract` will return 0 results. The initial modeling requires:
+
+1. **Manual facts curation**: Create `moju/draft/domain/<crate>.facts.json` files by reading Rust source. Each `type_defs` entry needs `name`, `file`, `mod_path`, `kind`, `fields`, `variants`. See `facts-to-moju-draft` skill for the format.
+2. **AI synthesis**: Use the `facts-to-moju-draft` skill to synthesize `.mju` files from manually curated facts.
+3. **After model is reviewed**: Run `moju-code align --write` to add `#[moju(kind = "...", domain = "...")]` annotations to Rust types, so future extractions work automatically.
+4. **Verify**: `moju verify moju/draft` after each change.
 
 ## Do Not
 

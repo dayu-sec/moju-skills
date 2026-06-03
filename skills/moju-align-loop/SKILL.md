@@ -37,7 +37,7 @@ When designing a new feature starting from the model:
 
 2. **Run diff** to see what code is missing
    ```bash
-   mojo-code diff <project-path>
+   moju-code diff <project-path>
    ```
    Focus on "模型有、代码无注解" — these are types to implement or annotate.
 
@@ -45,7 +45,7 @@ When designing a new feature starting from the model:
 
 4. **Verify sync**
    ```bash
-   mojo-code align <project-path> --check
+   moju-code align <project-path> --check
    ```
    Should report no changes needed. If not, fix annotations.
 
@@ -57,7 +57,7 @@ When code changes first and the model needs to catch up:
 
 2. **Run diff** to see model gaps
    ```bash
-   mojo-code diff <project-path>
+   moju-code diff <project-path>
    ```
    Focus on "代码已注解、模型无" — these need model entries.
 
@@ -78,10 +78,10 @@ When code changes first and the model needs to catch up:
 
 ```bash
 # Safe preview
-mojo-code align <project-path> --check
+moju-code align <project-path> --check
 
 # Apply changes
-mojo-code align <project-path> --write
+moju-code align <project-path> --write
 ```
 
 Works for both Rust and Java projects. For Java, `align --write` updates `@MoJu` annotations on generated classes.

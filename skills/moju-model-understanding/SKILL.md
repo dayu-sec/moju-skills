@@ -150,6 +150,11 @@ verify CreateOk for flow CreateItemFlow {
 | `step S { }` | Empty step body | Add a `create` or other action |
 | `module M { owns MyFlow }` | owns must reference domain.mju items | Only list struct/state/command |
 | `dataflow X { ... }` | Not a valid keyword in this version | Use `dependency_rule` instead |
+| `trait X { ... }` | `trait` is not a valid top-level item | Use `cap` in `behavior.mju` for capability traits |
+| `step S { on EventName }` | Step guard events are not supported | Move event handling to flow trigger level |
+| `step S { react { ... } }` | `react` blocks are not valid in steps | Use `create`/`update` actions directly |
+| `flow F { create Domain.Type { ... } }` | Cross-domain references not supported in flows | Only reference types in the same domain |
+| `step S { on PreparedXxx }` | `on` inside step is not valid for struct events | Use `command` as flow trigger instead |
 
 ### Validation Loop
 
