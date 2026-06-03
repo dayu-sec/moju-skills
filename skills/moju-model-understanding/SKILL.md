@@ -1,12 +1,15 @@
 ---
 name: moju-model-understanding
-description: How to understand MoJu language and model concepts when drafting models or implementing generated code. Covers domain concepts, generation boundaries, and separation of concerns.
+description: How to understand MoJu language and model concepts when drafting models or implementing generated code. Covers domain concepts, syntax reference, reading model files, generation boundaries, and common pitfalls.
 triggers:
   - drafting MoJu models
   - interpreting MoJu model files
   - understanding domain.mju
   - understanding binding.mju
   - understanding profile.mju
+  - reading MoJu model files
+  - implementing generated MoJu skeleton
+  - reading AI_TASKS.md
 ---
 
 # MoJu Model Understanding
@@ -27,6 +30,17 @@ Use this skill before drafting MoJu models or implementing generated code from a
 - `dataflow` describes data movement between messages, flows, structs, storages, capabilities, and modules.
 - `module` describes responsibility and provider boundaries, not Rust `mod`.
 - `cap` describes an abstract capability. Concrete clients/adapters are implementation details.
+
+## Reading Model Files
+
+When implementing code from a generated MoJu skeleton:
+
+1. Read `AI_TASKS.md` in the generated crate.
+2. Read this skill to understand MoJu language concepts.
+3. Read the source MoJu model directory referenced by `AI_TASKS.md`.
+4. Use `MOJU_MODEL.md` only as a navigation summary — it may be stale.
+
+The source MoJu files are authoritative: `moju/profile.mju`, `moju/<domain>/domain.mju`, `moju/<domain>/binding.mju`. Treat `interface`, `message`, `flow`, `storage`, and `binding` as implementation constraints. Preserve MoJu names when mapping to code. Do not invent routes, response variants, storage adapters, or capability clients not present in the model.
 
 ## Generation Boundaries
 
