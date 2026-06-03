@@ -34,40 +34,7 @@ facts.json + project source
 source code -> moju-code extract -> facts.json -> AI semantic merge -> moju-draft/*.mju -> moju verify -> human review -> merge to moju/
 ```
 
-### Rust Projects Without `#[moju]` Annotations
-
-`moju-code extract` for Rust requires `#[moju(kind = "...", domain = "...")]` annotations on types. Without them, `extract` returns `type_defs: 0`. In this case:
-
-1. **Manually curate facts.json**: Create `type_defs` entries with `name`, `file`, `mod_path`, `kind`, `fields`, `variants` based on reading the Rust source directly.
-2. **Use AI code analysis**: Read Rust source files to understand struct fields, enum variants, and type relationships.
-3. **Minimal facts schema**: At minimum, each entry needs `name` (with `mod_path::` prefix), `file`, and `mod_path`. For semantic merge, also add `kind` (`struct`/`state`), `fields` (array of field names), and `variants` (for state enums).
-4. **After first model is created**: Use `moju-code align --write` to add `#[moju]` annotations back to code, so future extractions work automatically.
-
-Example minimal facts.json for a Rust project without annotations:
-
-```json
-{
-  "type_defs": [
-    {
-      "name": "fusion::FusionConfig",
-      "file": "src/fusion.rs",
-      "mod_path": "fusion",
-      "kind": "struct",
-      "fields": ["mode", "runtime", "window_defaults", "windows", "sinks", "sources"]
-    },
-    {
-      "name": "error::ConfigReason",
-      "file": "src/error.rs",
-      "mod_path": "error",
-      "kind": "state",
-      "variants": ["Load", "Parse", "Validation", "Path", "General"]
-    }
-  ],
-  "moju_annotations": [],
-  "state_writes": [],
-  "state_guards": []
-}
-```
+`moju-code extract` works on Rust syntax directly — struct names, fields, and enum variants are extracted from source without needing `#[moju]` annotations. Annotations (`#[moju(kind = "...", domain = "...")]`) enrich the extraction with kind/domain metadata, enabling precise diff and align, but they are not a prerequisite for basic extraction.
 
 ## Rules vs AI Boundary
 

@@ -88,16 +88,14 @@ When code annotations differ from `moju/`:
 - prefer small patches scoped to metadata attributes
 - if code behavior contradicts the reviewed model, create a review item rather than forcing sync
 
-## Rust Setup Notes
+## Before Running Align
 
-Before running `align --write`, add `moju-derive` as a dependency. Use a git dependency (not path — `moju-derive` has its own workspace which conflicts with path resolution):
+Add `moju-derive` as a dependency so the generated annotations compile. Use a git dependency — `moju-derive` has its own workspace which prevents path resolution:
 
 ```toml
 [workspace.dependencies]
 moju-derive = { git = "...", branch = "main" }
 ```
-
-After `align --write`, if the project uses Rust edition 2024, derive helper attributes (`#[serde]`, `#[moju]`) must appear after `#[derive]`. If `moju-code align` places them before, swap the line order. See `moju-project-init` for the full reverse-modeling pipeline that precedes this step.
 
 ## Patch Discipline
 

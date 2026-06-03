@@ -68,24 +68,6 @@ When code changes first and the model needs to catch up:
 
 4. **Run diff again** — should converge to zero
 
-### Rust Projects Without Annotations (Bootstrap)
-
-For Rust projects that have no `#[moju]` annotations yet, `moju-code extract` returns 0 results and `moju-code diff` shows everything as "模型有、代码无". The bootstrap flow is:
-
-1. **Manual facts curation**: Read Rust source and build `facts.json` with `type_defs` entries containing `kind`, `fields`, `variants`
-2. **AI semantic merge**: Use `facts-to-moju-draft` skill to synthesize `moju/draft/*.mju`
-3. **Verify draft**: `moju verify moju/draft`
-4. **Review and promote**: `cp -r moju/draft/domain moju/model/domain`
-5. **Add `moju-derive` dependency** (git, not path — path conflicts with its own workspace):
-   ```toml
-   moju-derive = { git = "https://github.com/dayu-sec/moju-derive.git", branch = "main" }
-   ```
-6. **Write annotations**: `moju-code align <crate> --write --model moju/model`
-7. **Fix edition 2024 ordering**: Swap `#[serde]` before `#[derive]` (see `moju-code-sync` skill)
-8. **Verify**: `cargo check` + `moju-code diff`
-
-After bootstrap, the normal loop works because annotations now exist.
-
 ## Align --Write Safety
 
 `align --write` modifies source code in place (Rust or Java). Before running:
