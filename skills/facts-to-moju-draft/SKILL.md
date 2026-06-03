@@ -128,6 +128,7 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 - Java enums annotated with `@MoJu(kind = "state")` map to `state` just as Rust enums do.
 - Trait definitions under `domain/caps/` map to `cap` with `op` for each method signature.
 - `state_writes` and `state_guards` can suggest `lifecycle` transitions, but should be marked inferred.
+- `struct_methods` contains all pub/pub(crate) methods with `&mut self` on each struct. AI selects up to 5 per struct to become `op` declarations.
 - Config structs/records (e.g., `*Config`, `*Properties`) map to `struct<config>`.
 - Failure type hierarchy (e.g., `StripePaymentFailure : PaymentGatewayFailure`) maps to `failure Child : Parent`.
 
@@ -145,6 +146,54 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 | `Map<K,V>` | `Map<K,V>` |
 | `Optional<T>` | `T?` |
 | Other objects | PascalCase class name (strip package) |
+
+## Struct Op Selection
+
+When `facts.struct_methods` is present, the AI must select up to **5 methods per struct** to become `op` declarations. The extractor dumps all qualifying methods; the AI picks which ones express "this struct handles these business facts."
+
+### Selection Heuristics (high to low signal)
+
+| Priority | Signal | Example |
+|----------|--------|---------|
+| P0 — Certain | Implements `Handler<Event>` trait | `impl Handler<InventoryReserved> for Inventory` |
+| P1 — Strong | Method name matches `handle_*`, `on_*`, `apply_*`, and param types are domain types | `fn handle_reserved(&mut self, cart: &Cart, items: &[CartItem])` |
+| P2 — Medium | `&mut self` + called from a flow/service layer (call-graph upwards) | Methods invoked in transaction/service orchestration |
+| P3 — Weak | `&mut self` + complex params, but name is generic | `fn process(&mut self, ctx: &Context)` |
+
+### Exclusion Rules
+
+- Methods returning `&self` (getters, queries) — skip
+- Methods with only primitive params (`i32`, `String`, `bool`) and no business-sounding name — skip
+- Private methods only called internally — skip
+- `fn new()`, `fn default()`, `fn clone()` — skip
+- Methods on config structs — skip
+
+### Output Format
+
+Selected methods become `op` declarations on the struct:
+
+```mju
+struct<domain> Inventory {
+  sku: Sku
+  available: Quantity
+  reserved: Quantity
+
+  op<sync> InventoryReserved(cart, items);
+  op<sync> InventoryReleased(cart, items);
+}
+```
+
+- Method name `handle_reserved` → event name `InventoryReserved` (strip `handle_`/`on_`/`apply_` prefix, PascalCase the rest)
+- If method name is already the event name, use as-is
+- If `Handler<Event>` trait impl, use `Event` name directly
+- Default to `op<sync>` unless the method returns a `Future` or is in an async context — then use `op<async>`
+
+### Confidence Metadata
+
+For each selected op, record in `extraction.meta.json`:
+- `source_method`: the original method name
+- `signal`: `trait_impl` / `name_match` / `call_graph` / `ai_inferred`
+- `confidence`: `high` / `medium`
 
 ## Naming Conflict Resolution
 
