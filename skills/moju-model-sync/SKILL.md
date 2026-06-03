@@ -74,6 +74,34 @@ When renaming a type (e.g., `BindingKind` → `Binding`):
 3. Update all struct fields that reference the old name
 4. Run `moju-code diff` to verify no new mismatches appear
 
+## Module Split Rules
+
+When a module's `owns` list grows too large (>15 items), split by business sub-domain, not by technical file layout:
+
+| Anti-Pattern | Correct |
+|-------------|---------|
+| `LangAst` owns 47 types (all AST nodes) | Split into `LangRule` (rule decl), `LangMatch` (match clauses), `LangExpr` (expressions), `LangJoin` (joins), `LangConv` (conversions), `LangTest` (test contracts) |
+| `ConfigLoader` owns 26 types (all config) | Split into `WindowConfig`, `SourceConfig`, `LoggingMetrics` |
+| Multiple modules own the same type | Each type belongs to exactly one module |
+
+### Owns Completeness Check
+
+Every item in `domain.mju` must appear in exactly one module's `owns` in `architecture.mju`:
+
+- `struct` / `state` / `command` / `actor` — all must be owned
+- `event` (trigger messages) — owned by the Interface layer module
+- Error states (`*Reason`) — owned by the most relevant domain module
+
+Run `moju verify` after each architecture change to catch missing owns.
+
+## Cross-Domain Reference Limits
+
+MoJu flows can only reference types within the same domain. Cross-domain references like `create Config.FusionConfig {}` in an orchestra flow will fail `moju verify` with `not defined`.
+
+- Flows describe **intra-domain** orchestration
+- Inter-domain dependencies are expressed via `dependency_rule` in `architecture.mju`
+- If a flow needs types from another domain, model the interaction as a `command` trigger rather than a direct create
+
 ## Sync Direction
 
 | Scenario | Direction |
@@ -86,3 +114,5 @@ When renaming a type (e.g., `BindingKind` → `Binding`):
 
 - Do not delete model types just to make diff pass. Understand the intent first.
 - Do not add `#[moju]` (Rust) or `@MoJu` (Java) to types that are pure implementation details (DTOs, DB rows, HTTP handlers/controllers).
+- Do not let a single module own >15 types — split by business responsibility.
+- Do not use cross-domain type references in flow steps — they will fail verification.
