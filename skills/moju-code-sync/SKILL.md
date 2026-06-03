@@ -88,81 +88,16 @@ When code annotations differ from `moju/`:
 - prefer small patches scoped to metadata attributes
 - if code behavior contradicts the reviewed model, create a review item rather than forcing sync
 
-## Rust: Setting Up `moju-derive`
+## Rust Setup Notes
 
-`moju-code align --write` adds `#[derive(::moju_derive::MoJu)]` and `#[moju(...)]` annotations to Rust source. The project must have `moju-derive` as a dependency.
-
-### Git Dependency (Recommended)
-
-In workspace `Cargo.toml`:
+Before running `align --write`, add `moju-derive` as a dependency. Use a git dependency (not path — `moju-derive` has its own workspace which conflicts with path resolution):
 
 ```toml
 [workspace.dependencies]
-moju-derive = { git = "https://github.com/dayu-sec/moju-derive.git", branch = "main" }
+moju-derive = { git = "...", branch = "main" }
 ```
 
-In each crate's `Cargo.toml`:
-
-```toml
-[dependencies]
-moju-derive = { workspace = true }
-```
-
-### Why Git Instead of Path
-
-`moju-derive` has its own `[workspace]` (it contains a proc-macro sub-crate). Cargo cannot resolve a path dependency to a separate workspace. Use git dependency to avoid this conflict.
-
-## Rust Edition 2024: Derive Helper Attribute Ordering
-
-Rust 2024 edition requires derive helper attributes (`#[serde(...)]`, `#[moju(...)]`) to appear **after** the `#[derive(...)]` line that introduces them. `moju-code align` may place `#[serde]` before `#[derive]`, causing:
-
-```
-error: derive helper attribute is used before it is introduced
-```
-
-Fix by swapping attribute order. A perl one-liner for bulk fix:
-
-```bash
-find crates -name "*.rs" -exec grep -l "serde" {} \; | while read f; do
-  perl -i -0777 -pe 's/#\[serde\(([^)]*)\)\]\n(#\[derive\([^)]*::moju_derive::MoJu[^)]*\)\])/\2\n#[serde(\1)]/g' "$f"
-done
-```
-
-This swaps `#[serde(...)]\n#[derive(...MoJu...)]` to `#[derive(...MoJu...)]\n#[serde(...)]`.
-
-## End-to-End Reverse Modeling Pipeline
-
-For a Rust project without existing `#[moju]` annotations:
-
-```
-1. Manual facts curation
-   Read Rust source → build facts.json (type_defs with kind/fields/variants)
-   ↓
-2. AI semantic merge (facts-to-moju-draft skill)
-   facts.json → draft/*.mju (domain + architecture + behavior + verify)
-   ↓
-3. Verify
-   moju verify moju/draft
-   ↓
-4. Review
-   Write review.md, mark high-confidence vs inferred changes
-   ↓
-5. Promote to model
-   cp -r moju/draft/domain moju/model/domain
-   ↓
-6. Add moju-derive dependency (see above)
-   ↓
-7. Write annotations
-   moju-code align <crate> --write --model moju/model
-   ↓
-8. Fix edition 2024 ordering (see above)
-   ↓
-9. Verify
-   cargo check
-   moju-code diff <crate> --model moju/model
-```
-
-After the first pass, `moju-code extract` will work automatically because annotations are now present.
+After `align --write`, if the project uses Rust edition 2024, derive helper attributes (`#[serde]`, `#[moju]`) must appear after `#[derive]`. If `moju-code align` places them before, swap the line order. See `moju-project-init` for the full reverse-modeling pipeline that precedes this step.
 
 ## Patch Discipline
 
