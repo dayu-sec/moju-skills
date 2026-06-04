@@ -97,10 +97,17 @@ moju-code align <crate-path> --write
 
 # 6. Verify zero differences
 moju-code diff <crate-path>
+
+# 7. Delete draft (avoid confusion with model)
+rm -rf moju/draft/
 ```
+
+After promotion, `moju/model/` is the single source of truth. `moju/draft/` is a temporary workspace — keeping it creates ambiguity about which copy is authoritative.
 
 ## Do Not
 
 - Do not commit `moju/draft/` to git.
+- Do not keep `moju/draft/` after promoting to model — delete it.
 - Do not skip the `moju verify` step — broken model files cascade into broken tooling.
 - Do not create model files manually in `moju/model/` without going through the draft-review-promote pipeline.
+- Do not run `moju-code diff` against draft when model exists — model is authoritative.
