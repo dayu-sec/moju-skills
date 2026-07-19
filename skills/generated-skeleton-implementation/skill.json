@@ -1,24 +1,28 @@
 {
   "name": "generated-skeleton-implementation",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "display_name": "Generated Skeleton Implementation",
-  "description": "How to work inside generated Rust skeletons produced by moju-generate. Covers reading order, implementation discipline, and acceptance criteria.",
+  "description": "How to work inside Rust or Java skeletons produced by moju-code generate. Covers reading order, current model layout, implementation discipline, annotations, config/storage bindings, and acceptance criteria.",
   "author": "moju",
   "license": "MIT",
   "platforms": ["claude-code", "codex"],
   "categories": ["moju", "implementation"],
   "triggers": {
     "keywords": [
+      "moju-code generate",
       "moju generate",
       "generated skeleton",
       "AI_TASKS.md",
       "skeleton implementation",
       "moju-gen.json",
-      "MOJU_MODEL.md"
+      "MOJU_MODEL.md",
+      "binding.mju",
+      "target.mju"
     ],
     "patterns": [
       "implement.*skeleton",
       "generated.*crate",
+      "generated.*project",
       "moju.*generate.*implement"
     ]
   },

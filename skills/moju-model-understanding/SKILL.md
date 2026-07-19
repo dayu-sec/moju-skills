@@ -1,11 +1,17 @@
 ---
 name: moju-model-understanding
-description: How to understand MoJu language and model concepts when drafting models or implementing generated code. Covers domain concepts, syntax reference, reading model files, generation boundaries, and common pitfalls.
+description: How to understand current MoJu language and model concepts when drafting models, reviewing moju-studio views, or implementing generated code. Covers domains, subsystems, use cases, layout regions, topology, bindings, profiles, validation, and common pitfalls.
 triggers:
   - drafting MoJu models
   - interpreting MoJu model files
+  - understanding moju/model
   - understanding domain.mju
+  - understanding behavior.mju
+  - understanding architecture.mju
   - understanding binding.mju
+  - understanding usecase.mju
+  - understanding layout.mju
+  - understanding topology.mju
   - understanding profile.mju
   - reading MoJu model files
   - implementing generated MoJu skeleton
@@ -14,191 +20,259 @@ triggers:
 
 # MoJu Model Understanding
 
-Use this skill before drafting MoJu models or implementing generated code from a MoJu model.
+Use this skill before drafting MoJu models, editing `moju/model`, reviewing moju-studio views, or implementing generated code from a MoJu model.
+
+## Current Model Layout
+
+The current canonical model root is `moju/model/`. Legacy roots such as `moju-model/` and `moju/` may still be read by tools, but new projects should use `moju/model/`.
+
+Typical layout:
+
+```text
+moju/model/
+  domain/<domain>/
+    domain.mju
+    behavior.mju
+    architecture.mju
+    binding.mju
+    verify.mju
+    layout.mju
+  subsystem/<subsystem>/
+    architecture.mju
+    usecase.mju
+    layout.mju
+  usecase.mju
+  topology.mju
+  target.mju
+  assembly.mju
+  profile.mju
+  moju-layout.json
+```
+
+`domain/<domain>/...` defines domain facts. `subsystem/<name>/...` defines system-scoped views and subsystem-level use cases. Root-level files define system-wide use cases, topology, deployment targets, assembly, and generation profiles.
 
 ## Model Concepts
 
-- `domain.mju` contains confirmed design facts: domain concepts, messages, actors, interfaces, flows, storages, dataflows, modules, failures, and verifies.
-- `binding.mju` contains confirmed implementation bindings: target, route, status, storage adapter, table/key/index, actor identity, transaction, and capability adapter bindings.
-- `moju/profile.mju` contains generation strategy: target matcher, language, runtime, dependencies, and scaffold. It is not a domain fact.
-- `struct` is a domain concept, not necessarily a Rust struct or database table.
-- `message<command/query/response>` is the protocol-facing input/output contract. Command messages can trigger flows.
-- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and binding details.
-- `actor access protocol<...>` constrains which inbound protocols an actor may use.
-- `flow` describes business orchestration and state/value changes, not just a list of functions.
-- `storage` describes logical persistence shape. `binding.mju` maps it to concrete adapters such as `sqldb<postgres>` or `cache<redis>`.
-- `dataflow` describes data movement between messages, flows, structs, storages, capabilities, and modules.
-- `module` describes responsibility and provider boundaries, not Rust `mod`.
-- `cap` describes an abstract capability. Concrete clients/adapters are implementation details.
+- `struct<domain>` is a domain concept. Fields may be typed, for example `id: UserId`, `items: List<CartItem>`, or `token: Secret`.
+- `struct<config>` describes configuration contracts.
+- `struct<ui>` describes UI/view data used by layout and generated prototypes.
+- `state` declares a finite state space.
+- `variant` declares tagged alternatives and may include payload fields.
+- `message<command/query/response>` is the protocol-facing message contract. Command messages commonly trigger flows.
+- `event` is a domain fact emitted or consumed by flows, lifecycles, scenarios, and dataflows.
+- `actor` defaults to a human actor. `actor<human>` and `actor<system>` are supported.
+- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`.
+- `flow` describes orchestration, required conditions, calls, creates, emits, handlers, match routing, and ensures.
+- `cap` describes an abstract capability. Concrete adapters are implementation details and are wired through modules/bindings.
+- `storage` describes logical persistence shape. Bindings map it to adapters such as `sqldb<postgres>`, `cache<redis>`, `queue<kafka>`, `object<oss>`, or `search<opensearch>`.
+- `dataflow` is a first-class model element for data movement and traceability.
+- `module` describes ownership, responsibility, dependencies, interface providers, and capability implementations.
+- `subsystem` groups modules with `uses module ...`; a module must not `own` a subsystem.
+- `usecase` ties actors, triggers, flows, scenarios, verifies, and outcomes together.
+- `region`, `region<page>`, `region<window>`, and `region<section>` describe UI layout regions.
+- `node`, `resource`, `network`, `link`, `target`, and `assembly` describe topology and deployment views.
+- `profile` describes code generation strategy. It is not a domain fact.
 
-## Reading Model Files
+## File Responsibilities
 
-When implementing code from a generated MoJu skeleton:
+| File | Primary content |
+|------|-----------------|
+| `domain.mju` | `struct`, `state`, `variant`, `message`, `event`, `actor`, `interface`, `storage`, `config`, `failure` |
+| `behavior.mju` | `lifecycle`, `cap`, `flow`, `scenario`, `failure_policy`, `retry_policy` |
+| `architecture.mju` | `module`, `dependency_rule`, `dataflow`, `decision`, subsystem declarations |
+| `binding.mju` | `target`, interface route/status/outcome binding, storage/config binding |
+| `verify.mju` | `verify` cases for flows |
+| `usecase.mju` | `usecase` blocks for system or subsystem scopes |
+| `layout.mju` | UI `struct<ui>`, `message<...,ui>`, `event`, `region`, and `bind Struct to Region` |
+| `topology.mju` | `node`, `resource`, `network`, `link`, deployment `bind` |
+| `target.mju` | named executable/site/platform targets |
+| `assembly.mju` | concrete runtime node implementations |
+| `profile.mju` | generation profile choices |
 
-1. Read `AI_TASKS.md` in the generated crate.
-2. Read this skill to understand MoJu language concepts.
-3. Read the source MoJu model directory referenced by `AI_TASKS.md`.
-4. Use `MOJU_MODEL.md` only as a navigation summary — it may be stale.
+These are conventions used by the current tools and studio views. The parser accepts many elements in any `.mju` file, but putting them in the expected file keeps navigation and scoped views correct.
 
-The source MoJu files are authoritative: `moju/profile.mju`, `moju/<domain>/domain.mju`, `moju/<domain>/binding.mju`. Treat `interface`, `message`, `flow`, `storage`, and `binding` as implementation constraints. Preserve MoJu names when mapping to code. Do not invent routes, response variants, storage adapters, or capability clients not present in the model.
+## Use Cases
 
-## Generation Boundaries
+System-level use cases belong at `moju/model/usecase.mju`. Subsystem use cases belong beside the subsystem architecture, for example `moju/model/subsystem/backup/usecase.mju`.
 
-- `target<kind,protocol>` selects a generation target shape. It does not name a concrete service like `CheckoutService`.
-- `profile Name for Target<kind,protocol>` maps target shape to implementation strategy.
-- Framework choices such as `axum`/`tokio` (Rust) or `Spring Boot`/`JPA` (Java) belong in profile/generation strategy, not in `domain.mju`.
-- Route paths, HTTP methods, statuses, storage adapters, actor identity mapping, transactions, and external capability adapter bindings belong in `binding.mju`.
-- Generated code should preserve the separation between API/protocol, app orchestration, domain types, and infra adapters. In Java this maps to: `api/` (controllers), `service/` (business logic), `domain/` (records, enums), `repository/` (data access).
-
-## .mju Syntax Reference
-
-When drafting `.mju` files, always start by running `moju init /tmp/example` to see the current canonical syntax. The init output is the authoritative reference.
-
-### domain.mju
-
-```
-// Fields: no type annotations — just concept names
-struct Item {
-  id
-  name
-  status
-}
-
-// State variants: one per line, no commas
-state ItemStatus {
-  Active
-  Archived
-  Pending
-}
-
-// Command: trigger for flows. Must have at least one field.
-// Empty body `{ }` is NOT valid.
-command CreateItem {
-  name
-}
-
-command UpdateItem {
-  id
-  new_name
-}
-```
-
-### behavior.mju
-
-```
-// trigger MUST reference a command (not a struct or state).
-// creates MUST reference a struct.
-// Every step MUST contain at least one action (create / update).
-// Empty step `step X { }` is NOT valid.
-flow CreateItemFlow {
-  trigger CreateItem
-  creates Item
-
-  step DoCreate {
-    create Item {
-      id = CreateItem.name
-      name = CreateItem.name
-    }
-  }
-}
-
-// Flow without produces: no `creates` clause needed.
-// Still, every step must have an action.
-flow PublishItem {
-  trigger UpdateItem
-
-  step Notify {
-    create Item {
-      status = UpdateItem.new_name
-    }
-  }
-}
-```
-
-### architecture.mju
-
-```
-// owns: must only reference items defined in domain.mju
-module Catalog {
-  layer Domain
-  owns Item, ItemStatus
-
-  responsible_for "Item lifecycle management"
-}
-
-module CatalogApi {
-  layer Interface
-  owns CreateItem, UpdateItem
-
-  responsible_for "Item HTTP API"
-}
-
-dependency_rule CatalogLayers {
-  CatalogApi -> Catalog
-}
-```
-
-### verify.mju
-
-```
-verify CreateOk for flow CreateItemFlow {
-  given {
-    CreateItem.name = "example"
+```mju
+usecase ViewDailyAuditReport {
+  meta {
+    label zh "查看每日审计报告"
+    label en "View Daily Audit Report"
+    summary zh "监管者查看每日访问审计统计和异常明细。"
   }
 
-  when CreateItem
+  actor DataSec.Regulator
+  trigger DataSec.ViewDailyAuditReport
+  outcome DataSec.DailyAuditReport
+  flow DataSec.DailyAuditReportViewing
+  scenario DataSec.DailyAuditReportReview
+  verify DataSec.DailyAuditReportViewed
+}
+```
 
-  expect {
-    Item.name == "example"
+Use cases are traceability nodes, not containers for architecture. Do not put use cases under `Architecture`; put them in `usecase.mju` at the correct system or subsystem scope.
+
+## Subsystems
+
+Subsystem declarations use modules; they do not own modules or concepts.
+
+```mju
+subsystem Backup {
+  meta {
+    label zh "备份子系统"
+    label en "Backup Subsystem"
+  }
+
+  uses module Foundation.BackupService, Foundation.RestoreService
+  uses module Foundation.BackupInspection
+}
+```
+
+In `moju-studio`, subsystem architecture/usecase/layout files are loaded as the subsystem's system domain. Subsystems should appear as peers of Architecture in navigation, with concrete subsystem nodes underneath.
+
+## Layout Regions
+
+Layout views use `region` elements. Plain `region Name` is the default generic region and remains valid for compatibility. Prefer typed regions when the UI intent is known:
+
+```mju
+region<page> ViewDailyAuditReportScreen {
+  meta {
+    label zh "查看每日审计报告"
+    label en "View Daily Audit Report"
+  }
+  orientation grid
+  contains DailyAuditReportFilterBar { area: filter, row: 1, col: 1, col_span: 2, width: fill }
+  contains DailyAuditFindingList { area: findings, row: 2, col: 1, width: fill, height: fill }
+  layout fill_remaining
+}
+
+region<section> DailyAuditFindingList {
+  orientation vertical
+  repeat DailyAuditFindingRow for finding in DailyAuditFindingView
+  layout scrollable
+}
+
+bind System.AccessAudit.DailyAuditFindingView to DailyAuditFindingRow
+```
+
+Supported region kinds are `region`, `page`, `window`, and `section`. Supported orientation values are `vertical`, `horizontal`, and `grid`. `contains` may carry placement attributes such as `area`, `row`, `col`, `row_span`, `col_span`, `width`, `height`, and `align`. Nested region placement can be expressed in `.mju`; studio may also store manual view coordinates in `moju-layout.json`.
+
+## Dataflows
+
+`dataflow` is valid current syntax. It belongs most often in `architecture.mju`.
+
+```mju
+dataflow CheckoutDataFlow {
+  node<message> SubmitOrder
+  node<flow> Checkout
+  node<storage> OrderStore
+  node<cap> PaymentGateway
+
+  edge<trigger> SubmitOrder -> Checkout {
+    data SubmitOrder
+  }
+
+  edge<write> Checkout -> OrderStore {
+    data Order
+  }
+
+  edge<call> Checkout -> PaymentGateway {
+    data PaymentIntent
   }
 }
 ```
 
-### Common Pitfalls
+Node kinds include `actor`, `message`, `event`, `struct`, `storage`, `flow`, `cap`, `module`, `transform`, `gateway`, `external`, and `resource`. Edge modes include `read`, `write`, `transform`, `call`, `return`, `emit`, `trigger`, `publish`, and `consume`.
 
-| Mistake | Why It Fails | Fix |
-|---------|-------------|-----|
-| `struct X { name: String }` | No type annotations in .mju | `struct X { name }` |
-| `command X { }` | Empty command body | Add at least one field |
-| `flow F { trigger SomeStruct }` | trigger must be a command | Define a command for the trigger |
-| `step S { }` | Empty step body | Add a `create` or other action |
-| `module M { owns MyFlow }` | owns must reference domain.mju items | Only list struct/state/command |
-| `dataflow X { ... }` | Not a valid keyword in this version | Use `dependency_rule` instead |
-| `trait X { ... }` | `trait` is not a valid top-level item | Use `cap` in `behavior.mju` for capability traits |
-| `step S { on EventName }` | Step guard events are not supported | Move event handling to flow trigger level |
-| `step S { react { ... } }` | `react` blocks are not valid in steps | Use `create`/`update` actions directly |
-| `flow F { create Domain.Type { ... } }` | Cross-domain references not supported in flows | Only reference types in the same domain |
-| `step S { on PreparedXxx }` | `on` inside step is not valid for struct events | Use `command` as flow trigger instead |
+## Topology And Targets
 
-### Validation Loop
+Topology models logical nodes, resources, network zones, and links:
+
+```mju
+node CustomerDataVault
+
+resource PrimaryPostgres {
+  kind sqldb<postgres>
+}
+
+network AppServiceNetwork {
+  ingress internal_only
+  trust_level internal
+  contains CustomerDataVault
+}
+
+bind Global.CustomerDataVault to CustomerDataVault with topology
+link<network> AppServiceNetwork -> AuditNetwork
+```
+
+Named targets can declare modules, while platform targets can declare subsystems:
+
+```mju
+target<bin,http> custody-api {
+  modules Business.DataCustody, Foundation.AppGateway
+}
+
+target<platform> data-sec-platform {
+  subsystem system/customer-data-vault
+  subsystem system/access-audit
+}
+```
+
+## Metadata
+
+Most top-level elements can carry `meta`:
+
+```mju
+actor<human> PlatformOperator {
+  meta {
+    label zh "平台运营"
+    label en "Platform Operator"
+    summary zh "平台方负责日常运营的人员。"
+    tag "platform"
+  }
+}
+```
+
+Use metadata for display labels, summaries, aliases, and tags. Keep model identity stable in English/PascalCase names and put localized text in `meta`.
+
+## Validation Loop
 
 ```bash
-# 1. See canonical syntax
-moju init /tmp/example && cat /tmp/example/moju-model/domain/business/domain.mju
-
-# 2. Write a small piece, verify immediately
-moju verify moju/draft/domain/<name>/
-
-# 3. Never batch-write without verifying — one syntax error blocks the entire model
+moju init /tmp/example
+moju verify moju/model
+moju-code diff <project>
+moju-code align <project> --check
 ```
+
+Use `moju init` as the current syntax reference when uncertain. Verify small edits frequently.
+
+## Common Pitfalls
+
+| Mistake | Why It Fails | Fix |
+|---------|--------------|-----|
+| Put subsystem use cases in root Architecture view | Wrong view scope | Use `moju/model/subsystem/<name>/usecase.mju` |
+| Put system use cases inside `architecture.mju` | Use cases are independent traceability views | Use root `usecase.mju` |
+| `subsystem X { owns M }` | Subsystems only support `uses module` | Declare modules separately, then `uses module M` |
+| `module M { owns SomeSubsystem }` | Modules cannot own subsystems | Put subsystem under `subsystem/` and reference modules |
+| `actor<service>` | Current actor kinds are `human` and `system` | Use `actor<system>` for non-human actors |
+| `target<platform>` with `modules` only | Platform targets are for subsystem composition | Use `subsystem ...` lines |
+| Layout only in `moju-layout.json` | Model semantics are lost | Express region hierarchy/placement in `layout.mju`; use layout JSON only for manual view positions |
+| Invent routes/status/storage adapters | These are binding facts | Add them only when known, in `binding.mju` |
 
 ## Do
 
-- Keep design facts, binding facts, and generation strategy separate.
-- Use qualified names when reasoning across domains.
-- Treat generated summaries as navigation aids only.
-- Preserve response statuses and storage adapter providers declared in `binding.mju`.
-- Use MoJu names as the source vocabulary for generated types, modules/classes, traits/interfaces, and handlers (in Rust or Java).
-- In Java, `@MoJu` annotations carry the same metadata as Rust `#[moju(...)]` — both are generated from the model and should be preserved.
-- Run `moju init` before drafting `.mju` files to see the current canonical syntax.
-- Verify frequently with `moju verify` — never batch-write a full model without incremental validation.
+- Treat source `.mju` files as authoritative; generated summaries are navigation aids.
+- Keep system, subsystem, domain, topology, layout, and generation concerns separate.
+- Use qualified names across domains and subsystem scopes.
+- Preserve MoJu names when mapping to code.
+- Use `meta` for Chinese/English display labels instead of changing identifiers.
+- Run `moju verify` and `moju-code diff` after model edits.
 
 ## Do Not
 
-- Do not infer unmodeled permissions, routes, status codes, storages, or capabilities as confirmed facts.
-- Do not move framework choices such as `axum`, `tokio`, `Spring Boot`, or `JPA` into `domain.mju`.
-- Do not treat `MOJU_MODEL.md` as more authoritative than the source model.
-- Do not add type annotations to struct fields (e.g., `name: String`).
-- Do not use empty bodies for `command`, `step`, or `flow` blocks.
-- Do not reference a `struct` as a `flow` trigger — triggers must be `command` types.
-- Do not guess `.mju` syntax without checking `moju init` output first.
+- Do not rely on stale restrictions from older MoJu versions: typed fields, `dataflow`, `usecase`, `subsystem`, and `region` are current syntax.
+- Do not move framework choices into `domain.mju`.
+- Do not treat `MOJU_MODEL.md` as more authoritative than `moju/model`.
+- Do not manually edit `moju-layout.json` as the only source of layout semantics.

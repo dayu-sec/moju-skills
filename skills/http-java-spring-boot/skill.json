@@ -1,8 +1,8 @@
 {
   "name": "http-java-spring-boot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "display_name": "HTTP Java Spring Boot",
-  "description": "How to implement Target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, request mapping, handler structure, service wiring, and JPA repositories.",
+  "description": "How to implement target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.",
   "author": "moju",
   "license": "MIT",
   "platforms": ["claude-code", "codex"],
@@ -12,10 +12,13 @@
       "HttpJava",
       "Spring Boot",
       "Target<bin,http> java",
+      "target<bin,http> java",
       "http java",
       "@RestController",
       "@MoJu annotation",
-      "spring boot moju"
+      "spring boot moju",
+      "actor_identity",
+      "outcome binding"
     ],
     "patterns": [
       "implement.*http.*java",

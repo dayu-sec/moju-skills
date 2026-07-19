@@ -1,11 +1,13 @@
 ---
 name: moju-project-init
-description: Setting up MoJu modeling directory structure and tooling pipeline for a project. Covers directory layout, tool chain, project resolution, and initial reverse-modeling workflow.
+description: Setting up the current MoJu modeling directory structure and tooling pipeline for a Rust or Java project. Covers moju/model layout, subsystem/usecase/layout files, tool chain, project resolution, and initial reverse-modeling workflow.
 triggers:
   - setting up moju project
   - initializing moju directory
   - first time moju modeling
   - moju project structure
+  - moju/model
+  - subsystem usecase layout
 ---
 
 # MoJu Project Init
@@ -14,100 +16,162 @@ Use this skill when setting up MoJu modeling for a new or existing Rust or Java 
 
 ## Goal
 
-Establish the directory structure and tooling pipeline so that model-code synchronization works from day one.
+Create a `moju/model/` tree that can be opened by moju-studio, validated by `moju verify`, and synchronized with code through `moju-code`.
 
-## Directory Structure
+## Canonical Directory Structure
 
-Under the project root:
+Use `moju/model/` for reviewed, authoritative models:
 
-```
+```text
 moju/
-  model/                   # Authoritative, reviewed models (committed to git)
+  model/
     domain/
       <domain-name>/
         domain.mju
         behavior.mju
         architecture.mju
-  draft/                   # AI-generated working drafts (gitignored)
+        binding.mju
+        verify.mju
+        layout.mju
+    subsystem/
+      <subsystem-name>/
+        architecture.mju
+        usecase.mju
+        layout.mju
+    usecase.mju
+    topology.mju
+    target.mju
+    assembly.mju
+    profile.mju
+    moju-layout.json
+  draft/
     domain/
       <domain-name>/
         domain.mju
         behavior.mju
         architecture.mju
+        binding.mju
+        verify.mju
         extraction.meta.json
         review.md
 ```
 
 Add to `.gitignore`:
-```
+
+```gitignore
 moju/draft/
 ```
 
-If `moju/draft/` was previously committed, remove and re-gitignore it.
+Keep `moju/model/` committed. Keep `moju/draft/` temporary and uncommitted.
+
+## File Placement Rules
+
+| Need | Put it here |
+|------|-------------|
+| Domain concepts, messages, events, actors, storage contracts | `moju/model/domain/<domain>/domain.mju` |
+| Flows, lifecycles, caps, scenarios, failure policies | `moju/model/domain/<domain>/behavior.mju` |
+| Modules, dependency rules, dataflows, decisions | `moju/model/domain/<domain>/architecture.mju` |
+| Routes, statuses, outcomes, storage/config bindings | `moju/model/domain/<domain>/binding.mju` |
+| Flow verification cases | `moju/model/domain/<domain>/verify.mju` |
+| System-level use cases | `moju/model/usecase.mju` |
+| Subsystem use cases | `moju/model/subsystem/<name>/usecase.mju` |
+| Subsystem declaration and module composition | `moju/model/subsystem/<name>/architecture.mju` |
+| UI layout regions for a domain or subsystem | `layout.mju` beside the relevant domain/subsystem files |
+| Nodes, resources, networks, links, deployment binds | `moju/model/topology.mju` |
+| Named targets and platform subsystem composition | `moju/model/target.mju` |
+| Runtime assembly details | `moju/model/assembly.mju` |
+| Generation profiles | `moju/model/profile.mju` |
+
+`subsystem/<name>/usecase.mju` and `subsystem/<name>/layout.mju` are intentionally adjacent in navigation. Do not bury subsystem use cases under the global architecture view.
 
 ## Tool Chain
 
-Works for both Rust and Java projects. `moju-code extract` auto-detects project type (Rust via `src/*.rs`, Java via `pom.xml`).
+Works for both Rust and Java projects:
 
-```
-source code (Rust or Java)
+```text
+source code
   -> moju-code extract -> facts.json
-  -> LLM synthesis (facts-to-moju-draft skill) -> moju/draft/*.mju
+  -> LLM synthesis -> moju/draft/
   -> moju verify moju/draft
   -> human review
-  -> merge to moju/model/
-  -> moju-code align --write (sync to code)
-  -> moju-code diff (verify zero differences)
+  -> promote to moju/model/
+  -> moju-code align --write
+  -> moju-code diff
 ```
 
-For Java extraction, the tool requires JDK 17+ and Maven. The `java-extract/` Maven project is auto-built on first use.
+Useful commands:
 
-## resolve_project_root Behavior
+```bash
+moju init <project>
+moju verify <project>/moju/model
+moju-code --version
+moju-code extract <project> --out <project>/facts.json
+moju-code align <project> --check
+moju-code align <project> --write
+moju-code diff <project>
+```
 
-The tool detects a project root by checking in order:
-1. Directory containing `moju/` or `moju-model/`
-2. Directory containing `Cargo.toml` + `src/` (Rust project)
-3. Directory containing `pom.xml` + `src/` (Java project)
-4. Parent directories upward
+For Java extraction, use JDK 17+ and Maven. The Java extractor is built from the `moju-code/java-extract/` project.
 
-## resolve_model_root Behavior
+## Project Resolution
 
-The tool finds model files by checking in order:
-1. `--model` CLI argument
-2. `<project-root>/moju/draft/`
-3. `<project-root>/moju/model/`
+Current tools prefer the new layout but still recognize legacy layouts:
 
-## Initial Reverse-Modeling
+1. `<project-root>/moju/model/`
+2. `<project-root>/moju/draft/` when explicitly working with drafts or when the tool chooses draft first
+3. `<project-root>/moju-model/` legacy layout
+4. `<project-root>/moju/` legacy flat layout
+
+When both `moju/model/` and legacy roots exist, treat `moju/model/` as authoritative.
+
+## Initial Reverse Modeling
 
 For an existing codebase without a model:
 
 ```bash
-# 1. Extract facts from code (works without annotations — parses Rust syntax directly)
-moju-code extract <crate-path>
+# 1. Extract code facts
+moju-code extract <project> --out <project>/facts.json
 
-# 2. Synthesize draft model (use facts-to-moju-draft skill)
-# 3. Verify draft parses
-moju verify moju/draft
+# 2. Synthesize draft model under moju/draft/
+# Use the facts-to-moju-draft skill.
 
-# 4. Review and promote to model/
-cp -r moju/draft/domain moju/model/domain
+# 3. Verify draft
+moju verify <project>/moju/draft
 
-# 5. Sync annotations back to code (adds #[moju] for precise future diffs)
-moju-code align <crate-path> --write
+# 4. Review and promote
+mkdir -p <project>/moju/model
+cp -R <project>/moju/draft/domain <project>/moju/model/
+
+# 5. Sync annotations back to code
+moju-code align <project> --write
 
 # 6. Verify zero differences
-moju-code diff <crate-path>
+moju-code diff <project>
 
-# 7. Delete draft (avoid confusion with model)
-rm -rf moju/draft/
+# 7. Remove draft after promotion
+rm -rf <project>/moju/draft
 ```
 
-After promotion, `moju/model/` is the single source of truth. `moju/draft/` is a temporary workspace — keeping it creates ambiguity about which copy is authoritative.
+If the project has explicit systems/subsystems, create subsystem files before promoting:
+
+```text
+moju/model/subsystem/backup/architecture.mju
+moju/model/subsystem/backup/usecase.mju
+moju/model/subsystem/backup/layout.mju
+```
+
+## Do
+
+- Prefer `moju/model/` for all new work.
+- Keep `usecase.mju`, `architecture.mju`, and `layout.mju` adjacent under each subsystem.
+- Put display names and Chinese labels in `meta`, not in identifiers.
+- Run `moju verify` after every structural move.
+- Use `moju-code diff` after promotion or alignment.
 
 ## Do Not
 
-- Do not commit `moju/draft/` to git.
-- Do not keep `moju/draft/` after promoting to model — delete it.
-- Do not skip the `moju verify` step — broken model files cascade into broken tooling.
-- Do not create model files manually in `moju/model/` without going through the draft-review-promote pipeline.
-- Do not run `moju-code diff` against draft when model exists — model is authoritative.
+- Do not commit `moju/draft/`.
+- Do not keep duplicate authoritative copies in both `moju/model/` and `moju-model/`.
+- Do not place subsystem use cases in root `architecture.mju`.
+- Do not manually create only `moju-layout.json` for UI semantics; define regions in `layout.mju`.
+- Do not skip verification before running code generation or alignment.

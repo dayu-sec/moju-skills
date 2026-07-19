@@ -9,7 +9,7 @@ Install MoJu skills from moju-skills repository.
 Default (no arguments): install ALL skills to Claude Code.
 
 Arguments:
-  skill-name    Name of the skill to install (e.g., moju-model-diff)
+  skill-name    Name of the skill to install (e.g., moju-model-understanding)
   --all          Install ALL skills (default when no skill name given)
 
 Options:
@@ -22,39 +22,31 @@ Environment:
 
 Examples:
   $0                              # install all skills to Claude Code
-  $0 moju-model-diff              # install one skill
+  $0 moju-model-understanding     # install one skill
   $0 --all --dir ~/my-skills      # install all skills to custom dir
-  $0 moju-model-sync --codex      # install one skill to Codex
+  $0 moju-model-align --codex     # install one skill to Codex
 
 Available skills:
-  moju-model-reading       — how to read MoJu model files
-  moju-model-understanding — how to understand MoJu language concepts
-  moju-model-diff          — analyze model-code differences
-  moju-model-sync          — sync model and code
-  moju-align-loop          — design-edit-diff-align feedback loop
-  facts-to-moju-draft      — synthesize moju-draft from facts
-  moju-code-sync           — sync reviewed metadata into code annotations
+  moju-model-understanding — understand current MoJu language concepts and model layout
+  moju-model-align         — sync moju/model and code annotations
+  facts-to-moju-draft      — synthesize moju/draft from facts
+  moju-extract             — extract Rust/Java facts with moju-code extract
   moju-project-init        — set up MoJu directory structure
-  generated-skeleton-implementation — work inside generated Rust skeletons
+  generated-skeleton-implementation — work inside generated Rust/Java skeletons
   http-rust-axum           — implement HttpRust skeletons
   http-java-spring-boot    — implement Java Spring Boot skeletons
-  moju-java-extract        — extract MoJu facts from Java @MoJu annotations
 EOF
 }
 
 ALL_SKILLS=(
-  moju-model-reading
   moju-model-understanding
-  moju-model-diff
-  moju-model-sync
-  moju-align-loop
+  moju-model-align
+  moju-extract
   facts-to-moju-draft
-  moju-code-sync
   moju-project-init
   generated-skeleton-implementation
   http-rust-axum
   http-java-spring-boot
-  moju-java-extract
 )
 
 skill_names=()

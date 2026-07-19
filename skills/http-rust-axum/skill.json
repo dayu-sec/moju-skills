@@ -1,8 +1,8 @@
 {
   "name": "http-rust-axum",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "display_name": "HTTP Rust Axum",
-  "description": "How to implement Target<bin,http> / HttpRust skeletons. Covers axum Router construction, message decoding, handler structure, and protocol separation.",
+  "description": "How to implement target<bin,http> / HttpRust skeletons. Covers axum Router construction, binding.mju routes/statuses/outcomes, actor identity, config/storage wiring, handler structure, and protocol separation.",
   "author": "moju",
   "license": "MIT",
   "platforms": ["claude-code", "codex"],
@@ -12,9 +12,12 @@
       "HttpRust",
       "axum",
       "Target<bin,http>",
+      "target<bin,http>",
       "http rust",
       "axum::Router",
-      "binding.mju routes"
+      "binding.mju routes",
+      "actor_identity",
+      "outcome binding"
     ],
     "patterns": [
       "implement.*http.*rust",

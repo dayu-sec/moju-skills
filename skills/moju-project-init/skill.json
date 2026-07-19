@@ -1,8 +1,8 @@
 {
   "name": "moju-project-init",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "display_name": "MoJu Project Init",
-  "description": "Setting up MoJu modeling directory structure and tooling pipeline for a project. Covers directory layout, tool chain, project resolution, and initial reverse-modeling workflow.",
+  "description": "Setting up the current MoJu modeling directory structure and tooling pipeline for a project. Covers moju/model layout, subsystem/usecase/layout files, tool chain, project resolution, and initial reverse-modeling workflow.",
   "author": "moju",
   "license": "MIT",
   "platforms": ["claude-code", "codex"],
@@ -14,7 +14,10 @@
       "moju setup",
       "moju directory",
       "moju structure",
-      "moju studio"
+      "moju/model",
+      "moju studio",
+      "subsystem usecase",
+      "layout.mju"
     ],
     "patterns": [
       "set.*up.*moju",

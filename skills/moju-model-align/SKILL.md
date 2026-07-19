@@ -1,6 +1,6 @@
 ---
 name: moju-model-align
-description: How to keep MoJu model and code annotations in sync. Covers diff diagnosis, alignment loop, sync rules (struct+kind merge, owns maintenance, rename propagation), and code annotation discipline.
+description: How to keep current MoJu models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, subsystem/layout awareness, rename propagation, and code annotation discipline.
 triggers:
   - model-code alignment
   - moju-code diff
@@ -8,8 +8,9 @@ triggers:
   - code annotations out of sync
   - syncing model and code
   - fixing diff mismatches
-  - struct+kind merge
+  - typed field sync
   - module owns maintenance
+  - subsystem model sync
 ---
 
 # MoJu Model Align
@@ -18,20 +19,20 @@ Use this skill to keep MoJu model files and code annotations consistent.
 
 ## Goal
 
-`moju-code diff` reports zero differences between model and code annotations.
+`moju-code diff` reports zero differences between `moju/model/` and code annotations.
 
 ## Direction
 
 ```
-moju/model/ (authoritative)  ──align──>  code annotations (mirror)
+moju/model/ (authoritative)  --align-->  code annotations (mirror)
 ```
 
-Never the reverse. If code has changed, update the model first (via `moju/draft/` → `moju verify` → promote), then align code.
+Never the reverse. If code has changed, update the model first through `moju/draft/`, run `moju verify`, promote to `moju/model/`, then align code.
 
 ## The Alignment Loop
 
 ```
-moju-code diff  →  review gaps  →  fix model (if needed)  →  moju verify  →  moju-code align --write  →  cargo check
+moju-code diff  ->  review gaps  ->  fix model if needed  ->  moju verify  ->  moju-code align --write  ->  cargo check / mvnw compile
        ↑                                                                                                          |
        +----------------------------------------------------------------------------------------------------------+
 ```
@@ -40,7 +41,7 @@ moju-code diff  →  review gaps  →  fix model (if needed)  →  moju verify  
 |------|---------|-------------|
 | 1. diff | `moju-code diff <project>` | Show what's out of sync |
 | 2. review | read the diff output | Decide: model wrong, or code missing annotations? |
-| 3. fix model | edit `moju/draft/` | If model needs updating: add/remove types, fix fields, update module owns |
+| 3. fix model | edit `moju/draft/` or reviewed `moju/model/` | If model needs updating: add/remove items, fix typed fields, update module owns/subsystems/usecases |
 | 4. verify | `moju verify` | Ensure `.mju` files parse, flow references resolve, owns are complete |
 | 5. align | `moju-code align <project> --write` | Push model metadata into code as `#[moju]` annotations |
 | 6. check | `cargo check` / `mvnw compile` | Ensure annotated code compiles |
@@ -60,9 +61,12 @@ If step 2 determines the model is already correct, skip steps 3-4 and go directl
 
 When `diff` shows many entries, check:
 
-- **owns missing from architecture.mju**: If a type exists in `domain.mju` but the module's `owns` list doesn't include it, the model parser won't recognize it.
+- **owns missing from architecture.mju**: If a type exists in `domain.mju` but no module owns it, code alignment may not know which module annotation to write.
 - **struct+kind not merged**: Model uses `struct X { kind: XKind }` + `state XKind`, but code uses a single `state X` enum directly.
 - **naming inconsistency**: Model and code use different names for the same concept.
+- **wrong scope**: A subsystem use case or layout region was added under the root system instead of `moju/model/subsystem/<name>/`.
+- **missing `meta` labels**: Studio display falls back to raw identifiers when `meta label zh/en` is absent.
+- **stale draft shadowing model**: A leftover `moju/draft/` can make tools read the wrong copy depending on command and context.
 
 ## Struct+Kind Merge Rule
 
@@ -79,25 +83,42 @@ state Action { Call, Create, Emit, ChangeAdd, Goto, Ensure }
 
 Update the owning struct: `kind: ActionKind` → `kind: Action`.
 
-## Module Owns Maintenance
+## Typed Field Sync
 
-- All `owns` for a module must be on a **single line**. The parser only keeps the last `owns` line.
-- Every type defined in `domain.mju` must appear in its module's `owns` list in `architecture.mju`.
-- After merging struct+kind, update owns to list the merged state name.
+Current MoJu supports typed fields:
 
 ```mju
-// Correct — single line
-module MoJuBinding {
-  owns Binding, InterfaceBinding, StorageBinding, ConfigBinding, ConfigProvider, ConfigFileFormat
+struct<domain> CustomerData {
+  unique id: CustomerDataId
+  customer_id: CustomerId
+  tags: List<String>
+  metadata: Map<String, String>
 }
+```
 
-// Wrong — parser only keeps the last line
+When code and model differ on fields:
+
+- Keep code field names/types when code is the implementation source of truth.
+- Keep model-only fields when they represent reviewed design intent not implemented yet.
+- Do not strip types from `.mju`; typed fields are current syntax.
+- Preserve `unique` when the model declares an identity field.
+
+## Module Owns Maintenance
+
+Current parser accumulates repeated `owns` lines. Multi-line `owns` is valid:
+
+```mju
 module MoJuBinding {
   owns Binding, InterfaceBinding
   owns StorageBinding, ConfigBinding
   owns ConfigProvider, ConfigFileFormat
 }
 ```
+
+- Every code-facing domain type should be owned by exactly one module.
+- Repeated `owns` lines are fine when they improve readability.
+- After merging struct+kind, update owns to list the merged state name.
+- Modules may `depends`, `provides`, and `implements`; they must not own subsystems.
 
 ## Module Split Rules
 
@@ -111,13 +132,25 @@ When a module's `owns` list grows too large (>15 types), split by **business res
 
 Every item in `domain.mju` must appear in exactly one module's `owns`:
 
-- `struct` / `state` / `command` / `actor` — all must be owned
+- `struct` / `state` / `variant` / `message` / `event` / `actor` / `storage` / `config` — should be owned when they map to code or architecture responsibility
 - Trigger `command` types — owned by the Interface layer module
 - Error states — owned by the most relevant domain module
 
-## Cross-Domain Reference Limits
+## Subsystem And Usecase Awareness
 
-Flows can only reference types defined in the **same domain**. Inter-domain dependencies are expressed via `dependency_rule` in `architecture.mju`. If a flow needs to interact with another domain's types, model it as a `command` trigger rather than directly creating cross-domain types.
+- System use cases belong in root `moju/model/usecase.mju`.
+- Subsystem use cases belong in `moju/model/subsystem/<name>/usecase.mju`.
+- Subsystem layout belongs in `moju/model/subsystem/<name>/layout.mju`.
+- `subsystem` blocks only use modules:
+
+```mju
+subsystem AccessAudit {
+  uses module DataSec.AccessAudit
+  uses module DataSec.AuditReport
+}
+```
+
+If `moju-code diff` or studio views show duplicated `System.*` items, check whether files were placed in the wrong directory or loaded under the wrong domain scope.
 
 ## Rename Propagation
 
@@ -125,11 +158,12 @@ When renaming a type:
 1. Update `domain.mju`: rename the type definition
 2. Update `architecture.mju`: rename in the module's `owns` list
 3. Update all struct fields that reference the old name
-4. Run `moju-code diff` to verify no new mismatches appear
+4. Update usecase/flow/scenario/dataflow/layout references
+5. Run `moju verify` and `moju-code diff`
 
 ## Code Annotation Discipline
 
-After a `moju-draft` model has been reviewed, validated, and promoted into `moju/`, sync metadata back to code:
+After a `moju/draft` model has been reviewed, validated, and promoted into `moju/model/`, sync metadata back to code:
 
 ### Rust
 
@@ -151,10 +185,11 @@ public record SubmitOrder(String id, String customerId) {}
 
 ### What To Sync
 
-- item kind: `struct`, `state`, `message`, `failure`, `storage`, `actor`
+- item kind: `struct`, `state`, `variant`, `message`, `failure`, `storage`, `actor`, `config`
 - domain
 - message role: `command`, `query`, `response`
 - unique fields
+- typed fields when represented in code
 - failure identity, tag, description
 - storage kind and durability
 
@@ -165,6 +200,7 @@ public record SubmitOrder(String id, String customerId) {}
 - storage adapter providers (`postgres`, `redis`, `kafka`)
 - config file paths and secret sources
 - design decisions and profile choices
+- usecase traceability and layout region placement
 
 ## Common Pitfalls
 
@@ -172,14 +208,17 @@ public record SubmitOrder(String id, String customerId) {}
 |---------|-------------|-----|
 | "模型有、代码无" for types that exist | Type name mismatch | Rename one side to match |
 | align adds `module = ""` | Empty module field | Check module attribution in architecture.mju |
-| Same diff entries persist after align | Multi-line owns | Merge owns onto single line |
+| Same diff entries persist after align | Wrong domain/module attribution or stale draft | Check model root, domain names, and owns |
 | align removes annotations | Model no longer owns the type | Add type to module's owns list |
+| Studio shows raw English names only | Missing display metadata | Add `meta { label zh ... label en ... }` |
+| Usecase appears in wrong tree node | File placed in wrong scope | Move to root `usecase.mju` or subsystem `usecase.mju` |
 
 ## Do
 
 - Model is always the source of truth. Change it first, then align code.
 - Run `diff` before and after every alignment session.
 - Use `--check` before `--write` to preview changes.
+- Keep `moju/model/` as the reviewed source and remove stale drafts after promotion.
 
 ## Do Not
 
@@ -187,4 +226,4 @@ public record SubmitOrder(String id, String customerId) {}
 - Do not add `#[moju]` / `@MoJu` to types that are pure implementation details.
 - Do not delete model types just to make diff pass.
 - Do not let a single module own >15 types — split by business responsibility.
-- Do not use cross-domain type references in flow steps.
+- Do not move subsystem/usecase/layout facts into unrelated domain files just to make navigation look right.

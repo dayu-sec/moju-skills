@@ -2,46 +2,44 @@
 
 MoJu skills are long-lived AI working rules for drafting MoJu designs and implementing generated skeletons.
 
-They are installed into `~/.claude/skills/` so Claude Code can load them as project-agnostic guidance.
+They can be installed into `~/.claude/skills/` or `~/.codex/skills/` so coding agents can load them as project-agnostic guidance.
 
 ## Install
 
 ```bash
 # Install from GitHub (default: dayu-sec/moju-skills, main branch)
-./install-skill.sh moju-model-diff
+./install-skill.sh moju-model-understanding
 
 # Install to specific platform
-./install-skill.sh moju-model-sync --claude
+./install-skill.sh moju-project-init --codex
 
 # Install all available skills
-./install-skill.sh moju-project-init --all
+./install-skill.sh --all
 
 # Install to custom directory
 ./install-skill.sh facts-to-moju-draft --dir ~/my-skills
 
 # Install from a specific branch/tag
-MOJU_SKILLS_REF=v1.0 ./install-skill.sh moju-model-diff
+MOJU_SKILLS_REF=v1.0 ./install-skill.sh moju-model-understanding
 ```
 
 ## Current Skills
 
 ### Model Reading & Understanding
-- `moju-model-reading`: how to read source MoJu model files before implementation.
-- `moju-model-understanding`: how to use `moju-core/docs-zh` to understand MoJu language and model concepts.
+- `moju-model-understanding`: how to understand current MoJu language concepts, model layout, domains, subsystems, use cases, layout regions, topology, bindings, and profiles.
 
 ### Model-Code Synchronization
-- `moju-model-diff`: how to use `moju-code diff` to analyze model-code differences in 4 categories.
-- `moju-model-sync`: rules for syncing model and code (struct+kind merge, owns maintenance, rename propagation).
-- `moju-align-loop`: capability design feedback loop — edit model, diff, align, iterate.
+- `moju-model-align`: how to use `moju-code diff` and `moju-code align` to keep `moju/model/` and Rust/Java annotations synchronized.
 
 ### Reverse Modeling
-- `facts-to-moju-draft`: how to synthesize a reviewed `moju-draft` from `moju-code extract` facts.
-- `moju-code-sync`: how to sync reviewed MoJu metadata back into code annotations.
-- `moju-project-init`: setting up MoJu modeling directory structure and tooling pipeline for a project.
+- `moju-extract`: how to extract Rust/Java facts with `moju-code extract`.
+- `facts-to-moju-draft`: how to synthesize a reviewed `moju/draft` model from `facts.json`.
+- `moju-project-init`: setting up the current `moju/model/` directory structure and tooling pipeline for a project.
 
 ### Skeleton Implementation
-- `generated-skeleton-implementation`: how to work inside generated Rust skeletons.
-- `http-rust-axum`: how to implement `Target<bin,http>` / `HttpRust` skeletons.
+- `generated-skeleton-implementation`: how to work inside Rust or Java skeletons produced by `moju-code generate`.
+- `http-rust-axum`: how to implement `target<bin,http>` / `HttpRust` skeletons.
+- `http-java-spring-boot`: how to implement `target<bin,http>` / `HttpJava` Spring Boot skeletons.
 
 ## Rule
 

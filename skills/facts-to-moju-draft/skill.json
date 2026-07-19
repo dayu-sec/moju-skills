@@ -1,8 +1,8 @@
 {
   "name": "facts-to-moju-draft",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "display_name": "Facts To MoJu Draft",
-  "description": "How to synthesize a reviewed moju-draft from moju-code extract facts JSON. Covers pipeline, file separation, mapping rules, semantic merge, rules vs AI boundary, Java type mapping, infrastructure field filtering, and review output.",
+  "description": "How to synthesize a reviewed moju/draft model from moju-code extract facts JSON. Covers current moju/model file separation, typed fields, use cases, subsystems, layout regions, topology, semantic merge, and review output.",
   "author": "moju",
   "license": "MIT",
   "platforms": ["claude-code", "codex"],
@@ -13,8 +13,12 @@
       "facts to moju",
       "reverse modeling",
       "moju draft",
+      "moju/draft",
       "facts.json",
-      "extraction.meta.json"
+      "extraction.meta.json",
+      "usecase.mju",
+      "layout.mju",
+      "topology.mju"
     ],
     "patterns": [
       "extract.*fact.*code",

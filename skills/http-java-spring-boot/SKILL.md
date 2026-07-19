@@ -1,9 +1,9 @@
 ---
 name: http-java-spring-boot
-description: How to implement Target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, request mapping, handler structure, service wiring, and JPA repositories.
+description: How to implement target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.
 triggers:
   - implementing HttpJava
-  - Target<bin,http> profile java
+  - target<bin,http> profile java
   - Spring Boot
   - java spring boot web server
   - http java profile
@@ -11,7 +11,7 @@ triggers:
 
 # HTTP Java Spring Boot
 
-Use this skill for `profile HttpJava for Target<bin,http>`.
+Use this skill for `profile HttpJava for ... target<bin,http>`.
 
 ## Read First
 
@@ -21,6 +21,7 @@ Use this skill for `profile HttpJava for Target<bin,http>`.
 - `src/main/java/*/service/*` (business logic)
 - `src/main/java/*/domain/*` (records, enums)
 - `src/main/java/*/repository/*` (JPA repositories)
+- source `binding.mju`, `behavior.mju`, `verify.mju`, and `target.mju`
 
 ## Do
 
@@ -28,8 +29,10 @@ Use this skill for `profile HttpJava for Target<bin,http>`.
 - Decode command/query messages using `@RequestBody` and `@RequestParam` annotations.
 - Call the generated `@Service` layer from controllers.
 - Convert response messages to HTTP status codes declared in `binding.mju` using `ResponseEntity<T>`.
+- Honor `auth`, `actor_identity`, and `outcome ... on ...` declarations from interface bindings.
 - Keep protocol concerns in `api/` package, orchestration in `service/`, and data access in `repository/`.
 - Use `@MoJu` annotations on all generated domain types (records, enums, exceptions).
+- Wire storage adapters and config properties from `binding.mju`; keep provider-specific code outside controllers.
 
 ## Spring Boot Conventions
 
@@ -70,10 +73,13 @@ The `@MoJu` annotation interface is auto-generated in the target project. It car
 - Do not return a single generic success response when MoJu declares multiple response messages.
 - Do not bypass the service layer from controllers.
 - Do not remove `@MoJu` annotations from generated types.
+- Do not ignore actor identity or authorization declarations just because the generated controller compiles.
 
 ## Acceptance
 
 - Routes match `binding.mju`.
 - Controller input/output types use generated record classes.
+- Status codes and response variants match declared outcomes.
+- Config and storage bindings are represented outside the API layer.
 - `mvnw compile` passes.
 - All domain types carry `@MoJu` annotations matching the source model.

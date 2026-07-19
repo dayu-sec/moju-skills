@@ -1,26 +1,34 @@
 {
-  "name": "moju-java-extract",
-  "version": "1.0.0",
-  "display_name": "MoJu Java Extract",
-  "description": "How to extract MoJu facts from Java projects with @MoJu annotations. Covers multi-module Maven/Gradle support, Java type mapping, infrastructure field filtering, and the moju-code extract pipeline for Java.",
+  "name": "moju-extract",
+  "version": "1.1.0",
+  "display_name": "MoJu Extract",
+  "description": "How to extract MoJu facts from Rust and Java projects. Covers current moju-code extract usage, Rust/Java annotation scanning, type mapping, field filtering, facts.json, and reverse-modeling handoff to moju/draft.",
   "author": "moju",
   "license": "MIT",
   "platforms": ["claude-code", "codex"],
-  "categories": ["moju", "java", "extraction"],
+  "categories": ["moju", "rust", "java", "extraction"],
   "triggers": {
     "keywords": [
+      "moju extract",
+      "moju rust extract",
       "moju java extract",
+      "rust facts",
       "java facts",
+      "rust moju annotations",
       "java moju annotations",
       "javaextractor",
+      "moju-code extract rust",
       "moju-code extract java",
       "@MoJu annotation extract"
     ],
     "patterns": [
       "extract.*java.*moju",
+      "extract.*rust.*moju",
       "java.*facts.*json",
+      "rust.*facts.*json",
       "scan.*java.*annotations",
-      "moju.*java.*extract"
+      "scan.*rust.*annotations",
+      "moju.*extract"
     ]
   },
   "files": {
