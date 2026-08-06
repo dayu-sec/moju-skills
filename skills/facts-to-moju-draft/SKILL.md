@@ -1,6 +1,6 @@
 ---
 name: facts-to-moju-draft
-description: How to synthesize a reviewed moju/draft model from moju-code extract facts JSON. Covers current moju/model file separation, typed fields, use cases, subsystems, layout regions, topology, semantic merge, and review output.
+description: How to synthesize a reviewed MoJu 2.0 draft model from moju-code extract facts JSON. Covers static/runtime file separation, typed fields, runtime services, use cases, subsystems, layout regions, topology, semantic merge, and review output.
 triggers:
   - converting code to moju model
   - moju-code extract
@@ -20,14 +20,18 @@ Produce reviewable files under `moju/draft/`, then verify the model parses befor
 
 ```
 facts.json + project source
-  -> moju/draft/domain/<domain>/domain.mju
-  -> moju/draft/domain/<domain>/behavior.mju
-  -> moju/draft/domain/<domain>/architecture.mju
-  -> moju/draft/domain/<domain>/binding.mju
-  -> moju/draft/domain/<domain>/verify.mju
-  -> moju/draft/subsystem/<name>/usecase.mju
-  -> moju/draft/subsystem/<name>/layout.mju
-  -> moju/draft/topology.mju
+  -> moju/draft/static/<domain>/domain.mju
+  -> moju/draft/static/<domain>/<module-or-responsibility>.mju  # optional split files
+  -> moju/draft/static/<domain>/behavior.mju
+  -> moju/draft/static/<domain>/architecture.mju
+  -> moju/draft/static/<domain>/binding.mju
+  -> moju/draft/static/<domain>/verify.mju
+  -> moju/draft/runtime/subsystem/<name>/subsystem.mju
+  -> moju/draft/runtime/subsystem/<name>/usecase.mju
+  -> moju/draft/runtime/subsystem/<name>/layout.mju
+  -> moju/draft/runtime/service/<service>/service.mju
+  -> moju/draft/runtime/service/<service>/target.mju
+  -> moju/draft/runtime/topology.mju
   -> moju/draft/extraction.meta.json
   -> moju/draft/review.md
   -> moju verify moju/draft
@@ -36,7 +40,7 @@ facts.json + project source
 ## Pipeline
 
 ```
-source code -> moju-code extract -> facts.json -> AI semantic merge -> moju/draft/*.mju -> moju verify -> human review -> merge to moju/model/
+source code -> moju-code extract -> facts.json -> AI semantic merge -> moju/draft/static + moju/draft/runtime -> moju verify -> human review -> merge to moju/model/
 ```
 
 `moju-code extract` works on Rust syntax directly — struct names, fields, and enum variants are extracted from source without needing `#[moju]` annotations. Annotations (`#[moju(kind = "...", domain = "...")]`) enrich the extraction with kind/domain metadata, enabling precise diff and align, but they are not a prerequisite for basic extraction.
@@ -59,17 +63,17 @@ This is the core design principle for the pipeline. Split every decision:
 - **Merge decisions**: when model and code disagree on a type's fields, decide which side is authoritative
 - **Naming resolution**: `ConfigInfo4Beta` vs `ConfigInfoBeta` — same concept or different? Decide whether to merge, alias, or keep both
 - **Struct op selection**: from a dump of all qualifying methods, pick up to 5 per struct that express "this struct handles these business facts"
-- **Domain clustering**: use `struct_relations` density to decide which structs belong in the same domain directory
+- **Domain clustering**: use `struct_relations` density to decide which structs belong in the same static domain directory
 - **Scenario inference**: use `struct_relations` direction (op_param edges) to infer message flow between structs
 - **Behavior generation**: deriving flows, caps, scenarios, verifies, and failure policies from controller/service code requires understanding architectural intent
-- **Architecture generation**: module boundaries, subsystem composition, dataflows, topology, targets, and layout regions
+- **Architecture generation**: static module boundaries, runtime subsystem/service composition, dataflows, topology, targets, and layout regions
 
 ### The Split In Practice
 
 ```
 Java source
   ──[moju-code extract: rules]──> facts.json (fields, types, enum values, attrs)
-  ──[AI semantic merge: skill]──> updated domain.mju (cleaned fields, merged items)
+  ──[AI semantic merge: skill]──> updated domain package files (cleaned fields, merged items)
 ```
 
 Rules produce standardized facts. AI consumes facts and makes decisions.
@@ -86,6 +90,8 @@ When updating an existing model with extracted facts, do NOT replace — merge:
 | Both, naming differs | **Judge** — decode naming patterns (e.g., `ConfigInfo4Beta` in Java = `ConfigInfoBeta` in model); may alias or merge |
 
 After merge, run `moju verify` to confirm parseability.
+
+When a domain has clear module clusters or a large ownership surface, split the draft inside `moju/draft/static/<domain>/` by module owner, interface provider, or business responsibility instead of forcing all facts into `domain.mju`. The split changes only file organization; `architecture.mju` still declares authoritative `module owns ...` relationships.
 
 ## Infrastructure Field Filtering
 
@@ -107,20 +113,24 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 
 | File | Contains | Does NOT contain |
 |------|----------|------------------|
-| `domain/<domain>/domain.mju` | `struct`, `state`, `variant`, `event`, `failure`, `message`, `actor`, `interface`, `config`, `storage` | flow bodies, dataflow edges, deployment topology |
-| `domain/<domain>/behavior.mju` | `lifecycle`, `cap` with ops, `flow`, `scenario`, `failure_policy`, `retry_policy` | struct/state/message definitions |
-| `domain/<domain>/architecture.mju` | `module`, `dependency_rule`, `dataflow`, `decision` | binding details and verify cases |
-| `domain/<domain>/binding.mju` | interface route/status/outcome bindings, storage adapter bindings, config source bindings | domain concepts and flows |
-| `domain/<domain>/verify.mju` | `verify` cases | production behavior declarations |
-| `usecase.mju` | system-level `usecase` blocks | subsystem-only use cases |
-| `subsystem/<name>/architecture.mju` | `subsystem` declaration and subsystem-scoped module composition | root topology |
-| `subsystem/<name>/usecase.mju` | subsystem-level `usecase` blocks | global/system-level use cases |
-| `layout.mju` | `struct<ui>`, UI messages/events, `region`, `bind Struct to Region` | storage or deployment binding |
-| `topology.mju` | `node`, `resource`, `network`, `link`, deployment `bind` | domain module ownership |
-| `target.mju` | named `target<...>` blocks, platform subsystem composition | route or storage adapter details |
+| `static/<domain>/domain.mju` or split static files | `struct`, `state`, `variant`, `event`, `failure`, `message`, `actor`, `interface`, `config`, `storage` | flow bodies, dataflow edges, deployment topology |
+| `static/<domain>/behavior.mju` | `lifecycle`, `cap` with ops, `flow`, `scenario`, `failure_policy`, `retry_policy` | struct/state/message definitions |
+| `static/<domain>/architecture.mju` | `layer`, `module`, `dependency_rule`, `dataflow`, `decision` | binding details and verify cases |
+| `static/<domain>/binding.mju` | interface route/status/outcome bindings, storage adapter bindings, config source bindings | domain concepts and flows |
+| `static/<domain>/verify.mju` | `verify` cases | production behavior declarations |
+| `runtime/subsystem/<name>/subsystem.mju` | `subsystem` declaration, `uses service`, optional `uses module` | static domain facts |
+| `runtime/subsystem/<name>/usecase.mju` | subsystem-level `usecase` blocks | static architecture |
+| `runtime/subsystem/<name>/layout.mju` | `struct<ui>`, UI messages/events, `region`, `bind Struct to Region` | storage or deployment binding |
+| `runtime/service/<name>/service.mju` | runtime `service`, `kind`, `surface`, `exposes`, `uses module` | static module ownership |
+| `runtime/service/<name>/target.mju` | service-specific `target<...>` details | domain concepts |
+| `runtime/topology.mju` | `node`, `resource`, `network`, `link`, deployment `bind` | domain module ownership |
+| `runtime/target.mju` | platform/root targets and subsystem composition | route or storage adapter details |
 
-> `cap` trait definitions (op list) go in `behavior.mju`. `cap` name references (e.g., `depends InventoryPort`) can appear in `architecture.mju` module sections.
-> `interface entry` goes in `domain.mju` as the stable external contract declaration. Route/HTTP binding details belong in `binding.mju`.
+> `cap` trait definitions (op list) go in `static/<domain>/behavior.mju`. `cap` name references (e.g., `depends InventoryPort`) can appear in `static/<domain>/architecture.mju` module sections.
+> `interface entry` goes in the domain package as the stable external contract declaration. Route/HTTP binding details belong in `binding.mju`.
+> `module<interface>` belongs in `static/<domain>/architecture.mju` as the provider/owner declaration. One provider module may `provides` multiple `interface` contracts; the contracts and entry messages may live together in a provider-focused split file such as `agent-facing-interface.mju`.
+> Use `module<entity>` for entity/state/aggregate/value-object ownership and `module<logic>` for rules, policies, calculations, and domain logic.
+> `service` is runtime. Put it in `runtime/service/<service>/service.mju`; do not model a deployable process as only `module<service>`.
 
 ## Authority Rules
 
@@ -133,7 +143,16 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 
 ## Mapping Rules
 
-- `type_defs` with `#[moju(kind = "struct")]` (Rust) or `@MoJu(kind = "struct")` (Java) maps to `struct<domain>`.
+**Note**: These mappings reflect the MoJu 2.0 design language. The current `moju verify` CLI parser supports a subset. When generating `.mju` files that must pass `moju verify`, adapt as follows:
+- `struct<domain>` → `struct` (omit angle-bracket annotation)
+- `message<command>` → `command`
+- `message<response>` → omit or document in `meta`
+- `actor<human>`, `actor<system>` → `actor` (annotate role via `meta` tags)
+- `struct<config>`, `struct<ui>` → `struct` (annotate via `meta` tags)
+- `cap`, `storage`, `failure` → document in `architecture.mju` comments or plan for future CLI support
+- All field types must use PascalCase: `String`, `Int`, `DateTime`, `Boolean`, `List<Type>`
+
+- `type_defs` with `#[moju(kind = "struct")]` (Rust) or `@MoJu(kind = "struct")` (Java) maps to `struct` (or `struct<domain>` in 2.0 design).
 - `type_defs` with `#[moju(kind = "state")]` (Rust) or `@MoJu(kind = "state")` (Java) maps to `state`. Enum constants become state variants.
 - `type_defs` with `#[moju(kind = "event")]` maps to `event`.
 - `type_defs` with `#[moju(kind = "message", role = "command")]` maps to `message<command>`.
@@ -144,7 +163,7 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 - `moju_annotations` provide the authoritative kind/role/domain for each type (from `#[moju]` in Rust or `@MoJu` in Java).
 - Java `@MoJu` annotation attributes (`kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`) carry the same metadata as Rust `#[moju(...)]`.
 - Java enums annotated with `@MoJu(kind = "state")` map to `state` just as Rust enums do.
-- Trait definitions under `domain/caps/` map to `cap` with `op` for each method signature.
+- Trait definitions under static domain capability areas map to `cap` with `op` for each method signature.
 - **Rust `trait` is not valid MoJu syntax**. Rust traits map to MoJu `cap` (capability) definitions in `behavior.mju`. Do NOT write `trait X { ... }` in `.mju` files — it will fail `moju verify`.
 - `state_writes` and `state_guards` can suggest `lifecycle` transitions, but should be marked inferred.
 - `struct_methods` contains all qualifying instance methods on each struct (Rust: `pub`/`pub(crate)` + `&mut self`; Java: public instance with params, excluding getters/setters). AI selects up to 5 per struct to become `op` declarations.
@@ -160,7 +179,8 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 Generate these only when the code or existing model gives enough evidence:
 
 - `usecase`: from controller/job entry points, user roles, command triggers, flows, and response/outcome messages.
-- `subsystem`: from service boundaries, package/module boundaries, deployment names, or explicit existing subsystem files.
+- `subsystem`: from deployable business system boundaries, product boundaries, platform boundaries, or explicit existing subsystem files.
+- `service`: from runnable processes, HTTP API crates/apps, web sites, daemons, workers, scheduled jobs, or deployable units.
 - `layout`: from UI view classes/components/screens, not from backend DTOs alone.
 - `topology`: from deployment manifests, runtime module names, infrastructure clients, or existing target/binding files.
 
@@ -213,16 +233,39 @@ When `facts.struct_methods` is present, the AI must select up to **5 methods per
 
 Selection is based on the AI's understanding of business context — method names, parameter types, and the struct's role in the domain. Do not use mechanical heuristics.
 
-Each selected method becomes an `op` declaration:
+Each selected method becomes an `op` declaration (MoJu 2.0 design syntax — for CLI-compatible output, document operations in meta tags or comments):
 
 ```mju
-struct<domain> Inventory {
-  sku: Sku
-  available: Quantity
-  reserved: Quantity
+// MoJu 2.0 design syntax:
+struct Inventory {
+  meta {
+    label zh "库存"
+    label en "Inventory"
+  }
+
+  unique sku: String
+  available: Int
+  reserved: Int
 
   op<sync> InventoryReserved(cart, items);
   op<sync> InventoryReleased(cart, items);
+}
+```
+
+For `moju verify` compatibility, omit `op` declarations and record operations elsewhere:
+
+```mju
+struct Inventory {
+  meta {
+    label zh "库存"
+    label en "Inventory"
+    tag "op:reserve"
+    tag "op:release"
+  }
+
+  unique sku: String
+  available: Int
+  reserved: Int
 }
 ```
 
@@ -242,13 +285,13 @@ When `facts.struct_relations` is present, the AI has a directed graph of struct-
 Relations with high density form a natural domain boundary. The AI groups structs into domain directories based on connection density:
 
 ```
-High density cluster → same domain/ directory
+High density cluster → same static/ directory
   Order ←→ PaymentIntent ←→ Cart ←→ Inventory
-  -> moju/draft/domain/business/
+  -> moju/draft/static/business/
 
 Sparse / isolated → config or cross-cutting
-  RunPolicy (0 relations) -> moju/draft/domain/business/ as struct<config>
-  HttpServerConfig (0 relations) -> moju/draft/domain/business/ as struct<config>
+  RunPolicy (0 relations) -> moju/draft/static/business/ as struct<config>
+  HttpServerConfig (0 relations) -> moju/draft/static/business/ as struct<config>
 ```
 
 AI uses its own judgment to decide the right domain names and boundaries. Do not hardcode "Business" for all clusters — infer domain names from the struct names in each cluster.

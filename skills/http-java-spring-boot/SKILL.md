@@ -1,6 +1,6 @@
 ---
 name: http-java-spring-boot
-description: How to implement target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.
+description: How to implement MoJu 2.0 runtime service target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.
 triggers:
   - implementing HttpJava
   - target<bin,http> profile java
@@ -11,7 +11,7 @@ triggers:
 
 # HTTP Java Spring Boot
 
-Use this skill for `profile HttpJava for ... target<bin,http>`.
+Use this skill for `profile HttpJava for ... target<bin,http>` or a generated `runtime/service/<service>` with `kind bin<http>`.
 
 ## Read First
 
@@ -21,16 +21,21 @@ Use this skill for `profile HttpJava for ... target<bin,http>`.
 - `src/main/java/*/service/*` (business logic)
 - `src/main/java/*/domain/*` (records, enums)
 - `src/main/java/*/repository/*` (JPA repositories)
-- source `binding.mju`, `behavior.mju`, `verify.mju`, and `target.mju`
+- source `static/<domain>/binding.mju`, `static/<domain>/behavior.mju`, `static/<domain>/verify.mju`
+- source `runtime/service/<service>/service.mju` and `runtime/service/<service>/target.mju`
+- source `runtime/topology.mju` if deployment resources or networks affect configuration
 
 ## Do
 
 - Build `@RestController` classes from routes declared in `binding.mju`.
+- Use `runtime/service/<service>/service.mju` to identify the runnable service, exposed interfaces, and static modules used by the service.
 - Decode command/query messages using `@RequestBody` and `@RequestParam` annotations.
 - Call the generated `@Service` layer from controllers.
 - Convert response messages to HTTP status codes declared in `binding.mju` using `ResponseEntity<T>`.
 - Honor `auth`, `actor_identity`, and `outcome ... on ...` declarations from interface bindings.
 - Keep protocol concerns in `api/` package, orchestration in `service/`, and data access in `repository/`.
+- Keep domain entities/states in code generated from `module<entity>` and business rules/policies in code generated from `module<logic>`.
+- Do not treat `module<service>` as the executable boundary; runtime `service` is the process/site/daemon boundary.
 - Use `@MoJu` annotations on all generated domain types (records, enums, exceptions).
 - Wire storage adapters and config properties from `binding.mju`; keep provider-specific code outside controllers.
 

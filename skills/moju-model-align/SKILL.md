@@ -1,6 +1,6 @@
 ---
 name: moju-model-align
-description: How to keep current MoJu models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, subsystem/layout awareness, rename propagation, and code annotation discipline.
+description: How to keep current MoJu 2.0 models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, static domain module splits, runtime subsystem/service awareness, rename propagation, and code annotation discipline.
 triggers:
   - model-code alignment
   - moju-code diff
@@ -61,10 +61,12 @@ If step 2 determines the model is already correct, skip steps 3-4 and go directl
 
 When `diff` shows many entries, check:
 
-- **owns missing from architecture.mju**: If a type exists in `domain.mju` but no module owns it, code alignment may not know which module annotation to write.
+- **owns missing from architecture.mju**: If a code-facing type exists in any `moju/model/static/<domain>/*.mju` file but no module owns it, code alignment may not know which module annotation to write.
+- **module kind too generic**: Domain structs/states often belong in `module<entity>`; rules, policies, and calculations often belong in `module<logic>`.
 - **struct+kind not merged**: Model uses `struct X { kind: XKind }` + `state XKind`, but code uses a single `state X` enum directly.
 - **naming inconsistency**: Model and code use different names for the same concept.
-- **wrong scope**: A subsystem use case or layout region was added under the root system instead of `moju/model/subsystem/<name>/`.
+- **wrong scope**: A subsystem use case or layout region was added under static domain files instead of `moju/model/runtime/subsystem/<name>/`.
+- **service/module confusion**: A deployable process was modeled as only `module<service>` instead of a runtime `service` under `runtime/service/<name>/`.
 - **missing `meta` labels**: Studio display falls back to raw identifiers when `meta label zh/en` is absent.
 - **stale draft shadowing model**: A leftover `moju/draft/` can make tools read the wrong copy depending on command and context.
 
@@ -74,7 +76,7 @@ When code uses a single `state` enum but model has `struct X { kind: XKind }` + 
 
 ```mju
 // Before (does NOT match code)
-struct<domain> Action { kind: ActionKind }
+struct Action { kind: ActionKind }
 state ActionKind { Call, Create, Emit }
 
 // After (merged, matches code)
@@ -85,12 +87,23 @@ Update the owning struct: `kind: ActionKind` → `kind: Action`.
 
 ## Typed Field Sync
 
-Current MoJu supports typed fields:
+Current MoJu supports typed fields with PascalCase types:
 
 ```mju
-struct<domain> CustomerData {
-  unique id: CustomerDataId
-  customer_id: CustomerId
+struct CustomerData {
+  meta { label zh "客户数据" }
+
+  unique id: String
+  name: String
+  email: String
+  status: CustomerStatus
+}
+
+struct CustomerData {
+  meta { label zh "客户数据" }
+
+  unique id: String
+  customer_id: String
   tags: List<String>
   metadata: Map<String, String>
 }
@@ -119,6 +132,7 @@ module MoJuBinding {
 - Repeated `owns` lines are fine when they improve readability.
 - After merging struct+kind, update owns to list the merged state name.
 - Modules may `depends`, `provides`, and `implements`; they must not own subsystems.
+- File placement does not imply ownership; `module owns ...` in `static/<domain>/architecture.mju` is authoritative even when the static domain package is split across several `.mju` files.
 
 ## Module Split Rules
 
@@ -130,23 +144,33 @@ When a module's `owns` list grows too large (>15 types), split by **business res
 
 ### Owns Completeness Check
 
-Every item in `domain.mju` must appear in exactly one module's `owns`:
+Every code-facing item in the static domain package (`moju/model/static/<domain>/*.mju`) must appear in exactly one module's `owns`:
 
 - `struct` / `state` / `variant` / `message` / `event` / `actor` / `storage` / `config` — should be owned when they map to code or architecture responsibility
 - Trigger `command` types — owned by the Interface layer module
 - Error states — owned by the most relevant domain module
 
-## Subsystem And Usecase Awareness
+## Runtime Subsystem, Service, And Usecase Awareness
 
-- System use cases belong in root `moju/model/usecase.mju`.
-- Subsystem use cases belong in `moju/model/subsystem/<name>/usecase.mju`.
-- Subsystem layout belongs in `moju/model/subsystem/<name>/layout.mju`.
-- `subsystem` blocks only use modules:
+- Subsystem use cases belong in `moju/model/runtime/subsystem/<name>/usecase.mju`.
+- Subsystem layout belongs in `moju/model/runtime/subsystem/<name>/layout.mju`.
+- Subsystem declarations belong in `moju/model/runtime/subsystem/<name>/subsystem.mju`.
+- Runtime services belong in `moju/model/runtime/service/<service>/service.mju`.
+- `subsystem` blocks compose services and may directly use modules:
 
 ```mju
 subsystem AccessAudit {
+  uses service access-audit-api
   uses module DataSec.AccessAudit
   uses module DataSec.AuditReport
+}
+```
+
+```mju
+service access-audit-api {
+  kind bin<http>
+  exposes DataSec.AccessAuditInterface
+  uses module DataSec.AccessAuditApplication
 }
 ```
 
@@ -155,8 +179,8 @@ If `moju-code diff` or studio views show duplicated `System.*` items, check whet
 ## Rename Propagation
 
 When renaming a type:
-1. Update `domain.mju`: rename the type definition
-2. Update `architecture.mju`: rename in the module's `owns` list
+1. Update the domain package file that defines the type
+2. Update `static/<domain>/architecture.mju`: rename in the module's `owns` list
 3. Update all struct fields that reference the old name
 4. Update usecase/flow/scenario/dataflow/layout references
 5. Run `moju verify` and `moju-code diff`
@@ -208,10 +232,11 @@ public record SubmitOrder(String id, String customerId) {}
 |---------|-------------|-----|
 | "模型有、代码无" for types that exist | Type name mismatch | Rename one side to match |
 | align adds `module = ""` | Empty module field | Check module attribution in architecture.mju |
-| Same diff entries persist after align | Wrong domain/module attribution or stale draft | Check model root, domain names, and owns |
+| Same diff entries persist after align | Wrong domain/module attribution or stale draft | Check model root, `static/<domain>` names, and owns |
 | align removes annotations | Model no longer owns the type | Add type to module's owns list |
 | Studio shows raw English names only | Missing display metadata | Add `meta { label zh ... label en ... }` |
-| Usecase appears in wrong tree node | File placed in wrong scope | Move to root `usecase.mju` or subsystem `usecase.mju` |
+| Usecase appears in wrong tree node | File placed in wrong scope | Move to `runtime/subsystem/<name>/usecase.mju` or an explicit runtime root usecase file |
+| Service-only subsystem opens an empty layer diagram | Runtime service counted as static module | Add `uses module` for static layer views or inspect runtime service/topology views |
 
 ## Do
 
@@ -219,6 +244,7 @@ public record SubmitOrder(String id, String customerId) {}
 - Run `diff` before and after every alignment session.
 - Use `--check` before `--write` to preview changes.
 - Keep `moju/model/` as the reviewed source and remove stale drafts after promotion.
+- Keep new authoritative paths in `static/<domain>` and `runtime/...`; do not add new legacy `domain/` or `subsystem/` roots.
 
 ## Do Not
 
@@ -226,4 +252,6 @@ public record SubmitOrder(String id, String customerId) {}
 - Do not add `#[moju]` / `@MoJu` to types that are pure implementation details.
 - Do not delete model types just to make diff pass.
 - Do not let a single module own >15 types — split by business responsibility.
-- Do not move subsystem/usecase/layout facts into unrelated domain files just to make navigation look right.
+- Do not hide domain entity ownership or business rules in an unrelated `module<service>` when `module<entity>` or `module<logic>` is the clearer static boundary.
+- Do not move subsystem/usecase/layout facts into unrelated static domain files just to make navigation look right.
+- Do not use `module<service>` as a substitute for a runtime `service`.

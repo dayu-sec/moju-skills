@@ -1,6 +1,6 @@
 ---
 name: http-rust-axum
-description: How to implement target<bin,http> / HttpRust skeletons. Covers axum Router construction, binding.mju routes/statuses/outcomes, actor identity, config/storage wiring, handler structure, and protocol separation.
+description: How to implement MoJu 2.0 runtime service target<bin,http> / HttpRust skeletons. Covers axum Router construction, binding.mju routes/statuses/outcomes, actor identity, config/storage wiring, handler structure, and protocol separation.
 triggers:
   - implementing HttpRust
   - target<bin,http>
@@ -10,7 +10,7 @@ triggers:
 
 # HTTP Rust Axum
 
-Use this skill for `profile HttpRust for ... target<bin,http>`.
+Use this skill for `profile HttpRust for ... target<bin,http>` or a generated `runtime/service/<service>` with `kind bin<http>`.
 
 ## Read First
 
@@ -19,17 +19,22 @@ Use this skill for `profile HttpRust for ... target<bin,http>`.
 - `src/api/*`
 - `src/app/*`
 - `src/domain/messages/*`
-- source `binding.mju`, `behavior.mju`, `verify.mju`, and `target.mju`
+- source `static/<domain>/binding.mju`, `static/<domain>/behavior.mju`, `static/<domain>/verify.mju`
+- source `runtime/service/<service>/service.mju` and `runtime/service/<service>/target.mju`
+- source `runtime/topology.mju` if deployment resources or networks affect configuration
 
 ## Do
 
 - Build an `axum::Router` from routes declared in `binding.mju`.
+- Use `runtime/service/<service>/service.mju` to identify the runnable service, exposed interfaces, and static modules used by the service.
 - Decode command/query messages using JSON extractors when the profile includes `serde`.
 - Call the generated app service or flow layer from handlers.
 - Convert response messages to the HTTP status codes declared in `binding.mju`.
 - Honor `auth`, `actor_identity`, and `outcome ... on ...` declarations from interface bindings.
 - Wire config loaders and storage adapters from `binding.mju`; keep provider-specific code outside handlers.
 - Keep protocol concerns in `src/api` and orchestration in `src/app`.
+- Keep domain entities/states in the code generated from `module<entity>` and business rules/policies in code generated from `module<logic>`.
+- Do not treat `module<service>` as the executable boundary; runtime `service` is the process/site/daemon boundary.
 - Preserve `#[derive(MoJu)]` and `#[moju(...)]` metadata on generated domain types.
 
 ## Do Not

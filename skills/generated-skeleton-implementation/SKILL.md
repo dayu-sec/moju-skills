@@ -1,6 +1,6 @@
 ---
 name: generated-skeleton-implementation
-description: How to work inside Rust or Java skeletons produced by moju-code generate. Covers reading order, current model layout, implementation discipline, annotations, config/storage bindings, and acceptance criteria.
+description: How to work inside Rust or Java skeletons produced by moju-code generate. Covers reading order, MoJu 2.0 static/runtime model layout, implementation discipline, annotations, config/storage bindings, runtime services, and acceptance criteria.
 triggers:
   - implementing generated skeleton
   - working inside moju-code generate output
@@ -18,8 +18,10 @@ Use this skill when editing a project produced by `moju-code generate`.
 - `MOJU_MODEL.md`
 - `.moju-gen.json`
 - source MoJu model directory referenced by `AI_TASKS.md`
-- relevant `moju/model/domain/<domain>/{domain,behavior,architecture,binding,verify}.mju`
-- relevant `moju/model/subsystem/<name>/{architecture,usecase,layout}.mju` if the target is subsystem-scoped
+- relevant `moju/model/static/<domain>/*.mju` static domain package files, including any module/responsibility split files
+- relevant `moju/model/runtime/subsystem/<name>/{subsystem,usecase,layout}.mju` if the target is subsystem-scoped
+- relevant `moju/model/runtime/service/<service>/{service,target,assembly}.mju` if the target is a generated runnable service/site/daemon
+- relevant `moju/model/runtime/{topology,target}.mju` for platform or deployment concerns
 
 ## Rust Projects
 
@@ -41,19 +43,22 @@ Use this skill when editing a project produced by `moju-code generate`.
 
 ## Model Facts To Respect
 
-- `domain.mju`: generated domain structs/states/messages/events/failures/config/storage contracts.
-- `behavior.mju`: flows, cap operations, failure policies, scenarios, and lifecycle constraints.
-- `architecture.mju`: module ownership, dependencies, providers, capability implementations, dataflows, and decisions.
-- `binding.mju`: protocol, route, status, outcome, storage adapter, and config binding details.
-- `verify.mju`: scenarios that must keep passing.
-- `layout.mju`: UI region/page/window/section structure when generating prototypes or UI targets.
-- `topology.mju` and `target.mju`: deployment nodes, resources, networks, named targets, and subsystem composition.
+- Static domain package files: generated domain structs/states/messages/events/failures/config/storage/interface contracts, whether they live in `domain.mju` or module/responsibility split files.
+- `static/<domain>/behavior.mju`: flows, cap operations, failure policies, scenarios, and lifecycle constraints.
+- `static/<domain>/architecture.mju`: module ownership, dependencies, providers, capability implementations, dataflows, and decisions.
+- `static/<domain>/binding.mju`: protocol, route, status, outcome, storage adapter, and config binding details.
+- `static/<domain>/verify.mju`: scenarios that must keep passing.
+- `runtime/subsystem/<name>/subsystem.mju`: subsystem composition through `uses service` and optional `uses module`.
+- `runtime/service/<service>/service.mju`: runnable service kind/surface, exposed interfaces, and used static modules.
+- `runtime/subsystem/<name>/layout.mju`: UI region/page/window/section structure when generating prototypes or UI targets.
+- `runtime/topology.mju` and `runtime/target.mju`: deployment nodes, resources, networks, named targets, and subsystem composition.
 
 ## Do
 
 - Leave explicit TODOs only where an external service, credential, schema, or policy decision is missing.
 - Run the appropriate local checks before handing off.
 - Keep `.moju-gen.json` and generated metadata in sync with the source model.
+- Treat `module<entity>` as entity/state ownership, `module<logic>` as business rule ownership, `module<service>` as static orchestration ownership, and runtime `service` as the runnable entity.
 
 ## Do Not
 
@@ -63,6 +68,7 @@ Use this skill when editing a project produced by `moju-code generate`.
 - For Java: do not remove `@MoJu` annotations or change generated package structure.
 - Do not invent unmodeled routes, outcomes, adapter providers, quotas, or authorization rules.
 - Do not implement a subsystem by directly coupling to unrelated subsystem internals when the model declares a cap/interface boundary.
+- Do not add routes, target details, or deployment resources into static domain files when they belong under `runtime/service` or `runtime/topology`.
 
 ## Acceptance
 

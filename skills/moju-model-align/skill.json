@@ -1,8 +1,8 @@
 {
   "name": "moju-model-align",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "display_name": "MoJu Model Align",
-  "description": "How to keep current MoJu models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, subsystem/layout awareness, rename propagation, and code annotation discipline.",
+  "description": "How to keep current MoJu 2.0 models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, static domain package module splits, runtime subsystem/service awareness, rename propagation, and code annotation discipline.",
   "author": "moju",
   "license": "MIT",
   "platforms": ["claude-code", "codex"],
@@ -17,6 +17,10 @@
       "fixing diff mismatches",
       "typed field sync",
       "module owns maintenance",
+      "domain package",
+      "module split",
+      "static runtime",
+      "runtime service",
       "subsystem model sync",
       "layout.mju"
     ],
