@@ -82,7 +82,7 @@ All elements may carry a `meta` block for display labels, summaries, and tags.
 - `event` is a domain fact emitted or consumed by flows. Fields use the same typed syntax as struct. Example: `event BackupCompleted { record_id: String snapshot_id: String }`.
 - `actor` declares an actor and which commands it can trigger. Supports `meta` for labels. Example: `actor Admin { can CreateBackupTask can StartBackup }`. For system actors, add `access protocol<http>`.
 - `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`. Supports `meta` for labels and summaries. An `entry`'s `output` may reference a `message<response>` **or a plain `struct`** — `output SomeStruct` is a direct response, so one-field wrapper response messages can be dropped.
-- `message<command> Name = BaseStruct { ... }` inherits all fields of `BaseStruct` and may add more. This shares request context (e.g. `requested_by`) across commands instead of repeating the field. Also works for `message<response>`.
+- `message<command> Name = BaseStruct { ... }` (and `command Name = BaseStruct { ... }`) inherit all fields of `BaseStruct` and may add more. This shares request context (e.g. `requested_by`) across commands instead of repeating the field. Also works for `message<response>`.
 - `state` declares a state space with typed fields. Example: `state BackupRecordState { unique id: String status: String started_at: DateTime }`.
 - `variant` declares tagged alternatives. Example: `variant BackupType { Full Incremental }`. Variants may have `meta`.
 - `flow` describes orchestration using `actor`, `trigger`, `creates`, and `step` blocks. Example: `flow BackupFlow { actor Admin trigger StartBackup creates BackupRecord step S { create BackupRecord { ... } } }`.
@@ -368,7 +368,7 @@ Use `moju init` as the current syntax reference when uncertain. Verify small edi
 - Use `meta` blocks for Chinese/English display labels, summaries, and tags; prefer the `tags "a","b","c"` list form for multiple tags.
 - Prefer one module per directory (`module/<name>/_mod.mju` + `items.mju`) so `owns` can be inferred instead of declared.
 - Prefer `output SomeStruct` over one-field `message<response> XReturned { field: SomeStruct }` wrapper messages.
-- Use `message<command> Name = BaseStruct { ... }` to share repeated request fields (e.g. `requested_by`).
+- Use `message<command> Name = BaseStruct { ... }` / `command Name = BaseStruct { ... }` to share repeated request fields (e.g. `requested_by`).
 - Run `moju verify` after every model edit — verify incrementally, one concept at a time.
 - Use `moju init` as the current syntax reference when uncertain about supported syntax.
 - Put module definitions in `static/<domain>/module.mju` — NOT `architecture.mju`.
