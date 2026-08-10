@@ -123,7 +123,7 @@ Start a small domain with `domain.mju`, `behavior.mju`, `architecture.mju`, `bin
 ```text
 moju/model/static/control/
   domain.mju                    # thin overview/index is acceptable
-  architecture.mju              # module owns/provides/depends and dependency rules
+  module.mju                    # module declarations (owns/provides/depends) and dependency rules
   user-facing-interface.mju     # user/admin interface contracts and entry flows
   agent-facing-interface.mju    # agent/daemon interface contracts and entry flows
   enrollment.mju

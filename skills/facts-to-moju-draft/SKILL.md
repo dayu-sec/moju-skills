@@ -145,8 +145,8 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 
 **Note**: These mappings reflect the MoJu 2.0 design language. The current `moju verify` CLI parser supports a subset. When generating `.mju` files that must pass `moju verify`, adapt as follows:
 - `struct<domain>` → `struct` (omit angle-bracket annotation)
-- `message<command>` → `command`
-- `message<response>` → omit or document in `meta`
+- `message<command>` → keep as `message<command>` (current syntax); plain `command` is legacy-compatible
+- `message<response>` → keep, or reference the payload struct directly as an `entry`'s `output SomeStruct`
 - `actor<human>`, `actor<system>` → `actor` (annotate role via `meta` tags)
 - `struct<config>`, `struct<ui>` → `struct` (annotate via `meta` tags)
 - `cap`, `storage`, `failure` → document in `architecture.mju` comments or plan for future CLI support

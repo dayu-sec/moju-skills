@@ -61,7 +61,7 @@ If step 2 determines the model is already correct, skip steps 3-4 and go directl
 
 When `diff` shows many entries, check:
 
-- **owns missing from architecture.mju**: If a code-facing type exists in any `moju/model/static/<domain>/*.mju` file but no module owns it, code alignment may not know which module annotation to write.
+- **owns missing**: If a code-facing type exists in any `moju/model/static/<domain>/*.mju` file but no module owns it (in the directory-per-module layout ownership is inferred; in file-style modules it is declared in the module header), code alignment may not know which module annotation to write.
 - **module kind too generic**: Domain structs/states often belong in `module<entity>`; rules, policies, and calculations often belong in `module<logic>`.
 - **struct+kind not merged**: Model uses `struct X { kind: XKind }` + `state XKind`, but code uses a single `state X` enum directly.
 - **naming inconsistency**: Model and code use different names for the same concept.
@@ -144,7 +144,7 @@ When a module's `owns` list grows too large (>15 types), split by **business res
 
 ### Owns Completeness Check
 
-Every code-facing item in the static domain package (`moju/model/static/<domain>/*.mju`) must appear in exactly one module's `owns`:
+Every code-facing item in the static domain package belongs to exactly one module. In the directory-per-module layout (`module/<name>/_mod.mju` + sibling item files) ownership is inferred from file placement, so no explicit `owns` list is needed. For file-style modules, ownership is declared via `module owns ...`:
 
 - `struct` / `state` / `variant` / `message` / `event` / `actor` / `storage` / `config` — should be owned when they map to code or architecture responsibility
 - Trigger `command` types — owned by the Interface layer module
@@ -180,7 +180,7 @@ If `moju-code diff` or studio views show duplicated `System.*` items, check whet
 
 When renaming a type:
 1. Update the domain package file that defines the type
-2. Update `static/<domain>/architecture.mju`: rename in the module's `owns` list
+2. Update the owning module: rename in the module's `owns` list (file-style modules) or move the item to the right module directory (directory-per-module layout)
 3. Update all struct fields that reference the old name
 4. Update usecase/flow/scenario/dataflow/layout references
 5. Run `moju verify` and `moju-code diff`

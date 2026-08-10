@@ -36,6 +36,7 @@ moju/model/
     <domain>/
       domain.mju                # struct, state, event, command, actor, interface
       module.mju                # module definitions with layer, owns, responsible_for
+      architecture.mju          # layer, dependency_rule (cross-domain only)
       module/                   # one directory per module (recommended)
         <module-a>/
           _mod.mju              # module header (meta, layer, depends, provides)
@@ -81,12 +82,12 @@ All elements may carry a `meta` block for display labels, summaries, and tags.
 - `command` is the triggering message contract. Command messages commonly trigger flows. Field syntax: `name: String`, `task_id: String`.
 - `event` is a domain fact emitted or consumed by flows. Fields use the same typed syntax as struct. Example: `event BackupCompleted { record_id: String snapshot_id: String }`.
 - `actor` declares an actor and which commands it can trigger. Supports `meta` for labels. Example: `actor Admin { can CreateBackupTask can StartBackup }`. For system actors, add `access protocol<http>`.
-- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`. Supports `meta` for labels and summaries. An `entry`'s `output` may reference a `message<response>` **or a plain `struct`** — `output SomeStruct` is a direct response, so one-field wrapper response messages can be dropped.
+- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`. Supports `meta` for labels and summaries. An `entry`'s `output` may reference a `message<response>`, a plain `struct`, or `List<Struct>` — `output SomeStruct` is a direct response, so wrapper response messages can be dropped. An `entry`'s `calls` is optional and defaults to `<entry>Flow`.
 - `message<command> Name = BaseStruct { ... }` (and `command Name = BaseStruct { ... }`) inherit all fields of `BaseStruct` and may add more. This shares request context (e.g. `requested_by`) across commands instead of repeating the field. Also works for `message<response>`.
 - `state` declares a state space with typed fields. Example: `state BackupRecordState { unique id: String status: String started_at: DateTime }`.
 - `variant` declares tagged alternatives. Example: `variant BackupType { Full Incremental }`. Variants may have `meta`.
-- `flow` describes orchestration using `actor`, `trigger`, `creates`, and `step` blocks. Example: `flow BackupFlow { actor Admin trigger StartBackup creates BackupRecord step S { create BackupRecord { ... } } }`.
-- `module` describes ownership, responsibility, and layer assignment. Syntax in `static/<domain>/architecture.mju`: `module Name { layer Application responsible_for "..." }`. Use `owns StructName` to declare ownership.
+- `flow` describes orchestration using `actor`, `trigger`, `creates`, and `step` blocks. Example: `flow BackupFlow { actor Admin trigger StartBackup creates BackupRecord step S { create BackupRecord { ... } } }`. `step` is optional: a flow with no explicit steps uses its `trigger` as the implicit entry (placeholder flows can omit the empty `step X {}` shell).
+- `module` describes ownership, responsibility, and layer assignment. Syntax: `module Name { layer Application responsible_for "..." }`. In the directory-per-module layout, `owns` is inferred from file placement and can be omitted; `responsible_for` is optional and defaults to the meta summary.
 - `layer` and `dependency_rule` in root `architecture.mju` define the system's layered architecture.
 - `verify` blocks assert flow correctness. Syntax: `verify Name for flow FlowName { given { ... } when Command expect { ... } }`.
 
@@ -133,7 +134,7 @@ For small domains, keep core facts in `static/<domain>/domain.mju`. When the dom
 ```text
 moju/model/static/control/
   domain.mju                    # domain overview or index
-  architecture.mju              # layer, module, owns, provides, depends
+  module.mju                    # layer, module declarations (owns inferred or explicit)
   user-facing-interface.mju     # user/admin interfaces, entries, messages, entry flows
   agent-facing-interface.mju    # agent/daemon interfaces, entries, messages
   enrollment.mju                # Enrollment-owned facts and flows
@@ -333,6 +334,13 @@ struct BackupTask {
 
 Use metadata for display labels, summaries, aliases, and tags. Keep model identity stable in English/PascalCase names and put localized text in `meta`. Field types use PascalCase: `String`, `Int`, `DateTime`, `Boolean`, `List<Type>`.
 
+Convenience defaults (omit to get the default, keep to override):
+- `label en` — omitted English label falls back to the humanized item name (`AgentControlCommand` -> `Agent Control Command`).
+- `responsible_for` on modules — defaults to the meta summary (zh, then en).
+- `entry calls` — defaults to `<entry>Flow`.
+- `entry input` — defaults to the entry name.
+- flow `step` — optional; the trigger is the implicit entry for placeholder flows.
+
 ## Validation Loop
 
 ```bash
@@ -377,7 +385,7 @@ Use `moju init` as the current syntax reference when uncertain. Verify small edi
 - Put subsystem declarations in `runtime/subsystem/<name>/subsystem.mju` with `uses service` + `uses module`.
 - Put flows in `behavior.mju`, verify cases in `verify.mju`, domain concepts in `domain.mju`.
 - Keep root `architecture.mju` only for cross-domain `layer` and `dependency_rule`.
-- Use `module Name { layer X owns Y responsible_for "..." }` syntax.
+- Use `module Name { layer X responsible_for "..." }` syntax; in the directory-per-module layout omit `owns` (inferred) and omit `responsible_for` (defaults to the meta summary).
 
 ## Do Not
 
