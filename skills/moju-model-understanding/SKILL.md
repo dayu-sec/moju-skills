@@ -334,6 +334,17 @@ struct BackupTask {
 
 Use metadata for display labels, summaries, aliases, and tags. Keep model identity stable in English/PascalCase names and put localized text in `meta`. Field types use PascalCase: `String`, `Int`, `DateTime`, `Boolean`, `List<Type>`.
 
+A canonical-naming lexicon lives in the model root `dictionary.mju` and unifies spelling across the model. `term` names the canonical spelling; `aliases` list historical/alternative spellings. Validation scans identifiers and meta display text, emitting non-fatal warnings for any alias usage:
+
+```mju
+lexicon {
+  term Gateway { aliases "GateWay", "WarpGateway", "WarpGateWay" }
+  term Agentd  { aliases "WarpAgentd" }
+}
+```
+
+Convenience defaults (omit to get the default, keep to override):
+
 Convenience defaults (omit to get the default, keep to override):
 - `label en` — omitted English label falls back to the humanized item name (`AgentControlCommand` -> `Agent Control Command`).
 - `responsible_for` on modules — defaults to the meta summary (zh, then en).
