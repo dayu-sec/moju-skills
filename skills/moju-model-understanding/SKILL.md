@@ -36,9 +36,13 @@ moju/model/
     <domain>/
       domain.mju                # struct, state, event, command, actor, interface
       module.mju                # module definitions with layer, owns, responsible_for
-      module/                   # optional: split by module when domain grows
-        <module-a>.mju
-        <module-b>.mju
+      module/                   # one directory per module (recommended)
+        <module-a>/
+          _mod.mju              # module header (meta, layer, depends, provides)
+          items.mju             # items owned by the module (owns inferred from the dir)
+        <module-b>/
+          _mod.mju
+          items.mju
       behavior.mju              # flow, scenario, lifecycle
       verify.mju                # verify cases for flows
       binding.mju               # implementation bindings (route, storage, config)
@@ -77,7 +81,8 @@ All elements may carry a `meta` block for display labels, summaries, and tags.
 - `command` is the triggering message contract. Command messages commonly trigger flows. Field syntax: `name: String`, `task_id: String`.
 - `event` is a domain fact emitted or consumed by flows. Fields use the same typed syntax as struct. Example: `event BackupCompleted { record_id: String snapshot_id: String }`.
 - `actor` declares an actor and which commands it can trigger. Supports `meta` for labels. Example: `actor Admin { can CreateBackupTask can StartBackup }`. For system actors, add `access protocol<http>`.
-- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`. Supports `meta` for labels and summaries.
+- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`. Supports `meta` for labels and summaries. An `entry`'s `output` may reference a `message<response>` **or a plain `struct`** — `output SomeStruct` is a direct response, so one-field wrapper response messages can be dropped.
+- `message<command> Name = BaseStruct { ... }` inherits all fields of `BaseStruct` and may add more. This shares request context (e.g. `requested_by`) across commands instead of repeating the field. Also works for `message<response>`.
 - `state` declares a state space with typed fields. Example: `state BackupRecordState { unique id: String status: String started_at: DateTime }`.
 - `variant` declares tagged alternatives. Example: `variant BackupType { Full Incremental }`. Variants may have `meta`.
 - `flow` describes orchestration using `actor`, `trigger`, `creates`, and `step` blocks. Example: `flow BackupFlow { actor Admin trigger StartBackup creates BackupRecord step S { create BackupRecord { ... } } }`.
@@ -137,7 +142,9 @@ moju/model/static/control/
   actors.mju                    # actors crossing several modules
 ```
 
-File placement does not define ownership. `module owns ...` in `static/<domain>/architecture.mju` remains the ownership source of truth. A `module<interface>` is a provider module and may `provides` multiple `interface` contracts; the provided interfaces and their entry messages can live in the matching interface file.
+In the directory-per-module layout, file placement **does** define ownership: a non-package module declared in `module/<name>/_mod.mju` (the only module in its directory) owns every ownable item in sibling files under that directory, so `owns` lists can be omitted. A `module<interface>` is a provider module and may `provides` multiple `interface` contracts; the provided interfaces and their entry messages can live in the matching interface directory.
+
+For file-style modules (module header plus items in one file, or several modules sharing a package directory), explicit `owns StructName` remains the ownership source of truth.
 
 ## Use Cases
 
@@ -294,7 +301,7 @@ target<bin,http> {
 
 ## Metadata
 
-Most top-level elements can carry `meta` with `label zh`, `label en`, `summary zh`, and `tag`:
+Most top-level elements can carry `meta` with `label zh`, `label en`, `summary zh`, and tags. Tags can be written as repeated `tag "x"` lines or as one comma-separated `tags "a","b","c"` line (equivalent):
 
 ```mju
 actor PlatformOperator {
@@ -313,7 +320,7 @@ struct BackupTask {
     label zh "备份任务"
     label en "Backup Task"
     summary zh "定义一个文件备份任务的配置。"
-    tag "backup"
+    tags "backup", "scheduled"
   }
 
   unique id: String
@@ -358,7 +365,10 @@ Use `moju init` as the current syntax reference when uncertain. Verify small edi
 - Treat source `.mju` files as authoritative; generated summaries are navigation aids.
 - Use `struct` (not `struct<domain>`) with PascalCase field types (`String`, `Int`, `DateTime`, `Boolean`, `List<Type>`).
 - Use `unique` prefix for primary key fields.
-- Use `meta` blocks for Chinese/English display labels, summaries, and tags.
+- Use `meta` blocks for Chinese/English display labels, summaries, and tags; prefer the `tags "a","b","c"` list form for multiple tags.
+- Prefer one module per directory (`module/<name>/_mod.mju` + `items.mju`) so `owns` can be inferred instead of declared.
+- Prefer `output SomeStruct` over one-field `message<response> XReturned { field: SomeStruct }` wrapper messages.
+- Use `message<command> Name = BaseStruct { ... }` to share repeated request fields (e.g. `requested_by`).
 - Run `moju verify` after every model edit — verify incrementally, one concept at a time.
 - Use `moju init` as the current syntax reference when uncertain about supported syntax.
 - Put module definitions in `static/<domain>/module.mju` — NOT `architecture.mju`.

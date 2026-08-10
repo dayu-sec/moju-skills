@@ -91,7 +91,7 @@ When updating an existing model with extracted facts, do NOT replace — merge:
 
 After merge, run `moju verify` to confirm parseability.
 
-When a domain has clear module clusters or a large ownership surface, split the draft inside `moju/draft/static/<domain>/` by module owner, interface provider, or business responsibility instead of forcing all facts into `domain.mju`. The split changes only file organization; `architecture.mju` still declares authoritative `module owns ...` relationships.
+When a domain has clear module clusters or a large ownership surface, split the draft inside `moju/draft/static/<domain>/` by module owner, interface provider, or business responsibility instead of forcing all facts into `domain.mju`. Prefer the directory-per-module form (`module/<name>/_mod.mju` declares the module header, sibling `items.mju` holds its facts) so ownership is inferred from the directory and `owns` lists can be omitted. For file-style modules, `module owns ...` declares ownership explicitly.
 
 ## Infrastructure Field Filtering
 

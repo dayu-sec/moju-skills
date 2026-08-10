@@ -132,7 +132,7 @@ module MoJuBinding {
 - Repeated `owns` lines are fine when they improve readability.
 - After merging struct+kind, update owns to list the merged state name.
 - Modules may `depends`, `provides`, and `implements`; they must not own subsystems.
-- File placement does not imply ownership; `module owns ...` in `static/<domain>/architecture.mju` is authoritative even when the static domain package is split across several `.mju` files.
+- In the directory-per-module layout, file placement **does** imply ownership: a module declared in `module/<name>/_mod.mju` (the only module in its directory) owns every ownable item in sibling files under that directory, so `owns` can be omitted. For file-style modules (header + items in one file, or several modules sharing a package directory), `module owns ...` remains authoritative.
 
 ## Module Split Rules
 

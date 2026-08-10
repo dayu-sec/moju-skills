@@ -132,7 +132,7 @@ moju/model/static/control/
   actors.mju                    # actors shared by several modules
 ```
 
-This split is only file organization. Domain scope still comes from the directory name, and module ownership still comes from `module owns ...` in `architecture.mju`. A `module<interface>` is the provider module and may provide multiple `interface` contracts; `module<entity>` owns domain entities/states/aggregates, and `module<logic>` owns rules, policies, calculations, and domain logic. Do not add `domain X` inside the module body to express domain membership.
+This split is only file organization. Domain scope still comes from the directory name. For larger modules, prefer the directory-per-module form: `module/<name>/_mod.mju` declares the module header, and a sibling `items.mju` holds its facts so ownership is inferred from the directory and `owns` can be omitted. For file-style modules, `module owns ...` declares ownership explicitly. A `module<interface>` is the provider module and may provide multiple `interface` contracts; `module<entity>` owns domain entities/states/aggregates, and `module<logic>` owns rules, policies, calculations, and domain logic. Do not add `domain X` inside the module body to express domain membership.
 
 ## Runtime Subsystems And Services
 
