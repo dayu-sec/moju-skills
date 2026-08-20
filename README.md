@@ -30,6 +30,7 @@ MOJU_SKILLS_REF=v1.0 ./install-skill.sh moju-model-understanding
 
 ### Model-Code Synchronization
 - `moju-model-align`: how to use `moju-code diff` and `moju-code align` to keep `moju/model/` and Rust/Java annotations synchronized.
+- `moju-impl-track`: how to read, write, and validate `moju/model/impl/usecases.json` — the usecase → code entry path mapping — with `moju-code impl-check`.
 
 ### Reverse Modeling
 - `moju-extract`: how to extract Rust/Java facts with `moju-code extract`.
@@ -40,6 +41,9 @@ MOJU_SKILLS_REF=v1.0 ./install-skill.sh moju-model-understanding
 - `generated-skeleton-implementation`: how to work inside Rust or Java skeletons produced by `moju-code generate`.
 - `http-rust-axum`: how to implement runtime service `target<bin,http>` / `HttpRust` skeletons.
 - `http-java-spring-boot`: how to implement runtime service `target<bin,http>` / `HttpJava` Spring Boot skeletons.
+
+### Code Generation Strategy
+- `moju-codegen-strategy`: decide when to use `moju-code generate` (greenfield — 0 or very little code, large/complete model) vs AI direct code generation (feature increments), and run post-generation initial verification against the model — surfacing differences and asking the engineer for the handling direction.
 
 ## Rule
 

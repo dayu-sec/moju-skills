@@ -1,0 +1,37 @@
+{
+  "name": "moju-codegen-strategy",
+  "version": "1.0.0",
+  "display_name": "MoJu Codegen Strategy",
+  "description": "Decide when to use moju-code generate (greenfield skeleton from a complete model) vs AI direct code generation (feature increments), and run post-generation initial verification against the model — surfacing differences and asking the engineer for the handling direction.",
+  "author": "moju",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex"],
+  "categories": ["moju", "implementation", "strategy"],
+  "triggers": {
+    "keywords": [
+      "moju-code generate",
+      "moju generate",
+      "codegen strategy",
+      "generate skeleton",
+      "feature increment",
+      "0 code",
+      "greenfield",
+      "AI code generation",
+      "generated vs model",
+      "post-generation verification",
+      "model code difference",
+      "code differs from model",
+      "moju-codegen-strategy"
+    ],
+    "patterns": [
+      "generate.*code.*from.*model",
+      "moju.*generate.*or.*ai",
+      "skeleton.*from.*moju",
+      "feature.*increment.*moju",
+      "verify.*generated.*against.*model"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

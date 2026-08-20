@@ -82,11 +82,11 @@ All elements may carry a `meta` block for display labels, summaries, and tags.
 - `command` is the triggering message contract. Command messages commonly trigger flows. Field syntax: `name: String`, `task_id: String`.
 - `event` is a domain fact emitted or consumed by flows. Fields use the same typed syntax as struct. Example: `event BackupCompleted { record_id: String snapshot_id: String }`.
 - `actor` declares an actor and which commands it can trigger. Supports `meta` for labels. Example: `actor Admin { can CreateBackupTask can StartBackup }`. For system actors, add `access protocol<http>`.
-- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`. Supports `meta` for labels and summaries. An `entry`'s `output` may reference a `message<response>`, a plain `struct`, or `List<Struct>` — `output SomeStruct` is a direct response, so wrapper response messages can be dropped. An `entry`'s `calls` is optional and defaults to `<entry>Flow`.
+- `interface` is the stable external entry contract. Protocol exposure is declared by provider modules and `binding.mju`. Supports `meta` for labels and summaries. An `entry`'s `output` may reference a `message<response>`, a plain `struct`, `List<Struct>`, or `Projection<...>` (`Projection<Struct>` / `Projection<List<Struct>>`) — `output SomeStruct` is a direct response, so wrapper response messages can be dropped. An `entry`'s `calls` is optional and defaults to `<entry>Flow`. **DTO/View principle**: query/aggregate views (counts summaries, status cards, `Returned` wrappers) are NOT strictly modeled — they live at the implementation layer; the model uses `List<Struct>` or `Projection<T>` to express "read shape of the domain", and code carries the concrete DTO fields. `Projection<T>` is only for non-trivial read shapes; plain lists use `List<Struct>`.
 - `message<command> Name = BaseStruct { ... }` (and `command Name = BaseStruct { ... }`) inherit all fields of `BaseStruct` and may add more. This shares request context (e.g. `requested_by`) across commands instead of repeating the field. Also works for `message<response>`.
 - `state` declares a state space with typed fields. Example: `state BackupRecordState { unique id: String status: String started_at: DateTime }`.
 - `variant` declares tagged alternatives. Example: `variant BackupType { Full Incremental }`. Variants may have `meta`.
-- `flow` describes orchestration using `actor`, `trigger`, `creates`, and `step` blocks. Example: `flow BackupFlow { actor Admin trigger StartBackup creates BackupRecord step S { create BackupRecord { ... } } }`. `step` is optional: a flow with no explicit steps uses its `trigger` as the implicit entry (placeholder flows can omit the empty `step X {}` shell).
+- `flow` describes orchestration using actors, responsibility lanes, entry triggers, signal triggers, and steps. Prefer binding the external command to the first activity: `flow BackupFlow { actor Admin step Start in Admin by StartBackup { ... next Persist } step<stop> Persist in Worker by BackupRequested { ... } }`. `in` may reference a declared lane or a flow participant directly. The first `by Command` is projected to `Flow.trigger`; a later `by Event` step starts an independent signal-driven sequence, and a later `by Command` step is a linear driver reached through an explicit `next` / `goto` edge — never through source order. **Control flow is fully explicit: every normal step must terminate with `next <step>` / `goto <step>` / `match { }`, or be declared `step<stop>` / `step<exit>`; source order is layout only and `moju verify` rejects a step with no explicit exit.** The legacy flow-level `trigger` remains compatible and must match the first `by` when both are present. React steps cannot declare `by`. `step` is optional: a step-less placeholder flow uses its flow-level `trigger` as the implicit entry.
 - `module` describes ownership, responsibility, and layer assignment. Syntax: `module Name { layer Application responsible_for "..." }`. In the directory-per-module layout, `owns` is inferred from file placement and can be omitted; `responsible_for` is optional and defaults to the meta summary.
 - `layer` and `dependency_rule` in root `architecture.mju` define the system's layered architecture.
 - `verify` blocks assert flow correctness. Syntax: `verify Name for flow FlowName { given { ... } when Command expect { ... } }`.
@@ -344,13 +344,12 @@ lexicon {
 ```
 
 Convenience defaults (omit to get the default, keep to override):
-
-Convenience defaults (omit to get the default, keep to override):
 - `label en` — omitted English label falls back to the humanized item name (`AgentControlCommand` -> `Agent Control Command`).
 - `responsible_for` on modules — defaults to the meta summary (zh, then en).
 - `entry calls` — defaults to `<entry>Flow`.
 - `entry input` — defaults to the entry name.
-- flow `step` — optional; the trigger is the implicit entry for placeholder flows.
+- flow-level `trigger` — optional when the first top-level step declares `by Command`; the derived trigger remains available to existing model consumers, while later `by Event` values remain independent step signals and later `by Command` values are linear driver steps reached via explicit `next` / `goto` (never source order).
+- flow `step` — optional for placeholder flows that retain a flow-level `trigger`.
 
 ## Validation Loop
 

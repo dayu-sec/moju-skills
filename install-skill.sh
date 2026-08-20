@@ -35,6 +35,7 @@ Available skills:
   generated-skeleton-implementation — work inside generated Rust/Java skeletons
   http-rust-axum           — implement HttpRust skeletons
   http-java-spring-boot    — implement Java Spring Boot skeletons
+  moju-codegen-strategy    — choose moju-code generate vs AI, and verify against the model
 EOF
 }
 
@@ -47,6 +48,7 @@ ALL_SKILLS=(
   generated-skeleton-implementation
   http-rust-axum
   http-java-spring-boot
+  moju-codegen-strategy
 )
 
 skill_names=()
