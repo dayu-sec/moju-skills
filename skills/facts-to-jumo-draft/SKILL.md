@@ -1,49 +1,49 @@
 ---
-name: facts-to-moju-draft
-description: How to synthesize a reviewed MoJu 2.0 draft model from moju-code extract facts JSON. Covers static/runtime file separation, typed fields, runtime services, use cases, subsystems, layout regions, topology, semantic merge, and review output.
+name: facts-to-jumo-draft
+description: How to synthesize a reviewed Jumo 2.0 draft model from jumo-code extract facts JSON. Covers static/runtime file separation, typed fields, runtime services, use cases, subsystems, layout regions, topology, semantic merge, and review output.
 triggers:
-  - converting code to moju model
-  - moju-code extract
+  - converting code to jumo model
+  - jumo-code extract
   - reverse modeling from code
-  - creating moju/draft
+  - creating jumo/draft
   - facts.json to model
   - semantic merge model and code
 ---
 
-# Facts To MoJu Draft
+# Facts To Jumo Draft
 
-Use this skill when converting `moju-code extract` Facts JSON from an existing codebase into a draft MoJu model, or when updating an existing model with newly extracted facts.
+Use this skill when converting `jumo-code extract` Facts JSON from an existing codebase into a draft Jumo model, or when updating an existing model with newly extracted facts.
 
 ## Goal
 
-Produce reviewable files under `moju/draft/`, then verify the model parses before handing off for review.
+Produce reviewable files under `jumo/draft/`, then verify the model parses before handing off for review.
 
 ```
 facts.json + project source
-  -> moju/draft/static/<domain>/domain.mju
-  -> moju/draft/static/<domain>/<module-or-responsibility>.mju  # optional split files
-  -> moju/draft/static/<domain>/behavior.mju
-  -> moju/draft/static/<domain>/architecture.mju
-  -> moju/draft/static/<domain>/binding.mju
-  -> moju/draft/static/<domain>/verify.mju
-  -> moju/draft/runtime/subsystem/<name>/subsystem.mju
-  -> moju/draft/runtime/subsystem/<name>/usecase.mju
-  -> moju/draft/runtime/subsystem/<name>/layout.mju
-  -> moju/draft/runtime/service/<service>/service.mju
-  -> moju/draft/runtime/service/<service>/target.mju
-  -> moju/draft/runtime/topology.mju
-  -> moju/draft/extraction.meta.json
-  -> moju/draft/review.md
-  -> moju verify moju/draft
+  -> jumo/draft/static/<domain>/domain.mju
+  -> jumo/draft/static/<domain>/<module-or-responsibility>.mju  # optional split files
+  -> jumo/draft/static/<domain>/behavior.mju
+  -> jumo/draft/static/<domain>/architecture.mju
+  -> jumo/draft/static/<domain>/binding.mju
+  -> jumo/draft/static/<domain>/verify.mju
+  -> jumo/draft/runtime/subsystem/<name>/subsystem.mju
+  -> jumo/draft/runtime/subsystem/<name>/usecase.mju
+  -> jumo/draft/runtime/subsystem/<name>/layout.mju
+  -> jumo/draft/runtime/service/<service>/service.mju
+  -> jumo/draft/runtime/service/<service>/target.mju
+  -> jumo/draft/runtime/topology.mju
+  -> jumo/draft/extraction.meta.json
+  -> jumo/draft/review.md
+  -> jumo verify jumo/draft
 ```
 
 ## Pipeline
 
 ```
-source code -> moju-code extract -> facts.json -> AI semantic merge -> moju/draft/static + moju/draft/runtime -> moju verify -> human review -> merge to moju/model/
+source code -> jumo-code extract -> facts.json -> AI semantic merge -> jumo/draft/static + jumo/draft/runtime -> jumo verify -> human review -> merge to jumo/model/
 ```
 
-`moju-code extract` works on Rust syntax directly — struct names, fields, and enum variants are extracted from source without needing `#[moju]` annotations. Annotations (`#[moju(kind = "...", domain = "...")]`) enrich the extraction with kind/domain metadata, enabling precise diff and align, but they are not a prerequisite for basic extraction.
+`jumo-code extract` works on Rust syntax directly — struct names, fields, and enum variants are extracted from source without needing `#[jumo]` annotations. Annotations (`#[jumo(kind = "...", domain = "...")]`) enrich the extraction with kind/domain metadata, enabling precise diff and align, but they are not a prerequisite for basic extraction.
 
 ## Rules vs AI Boundary
 
@@ -52,7 +52,7 @@ This is the core design principle for the pipeline. Split every decision:
 ### Rules Can Do (deterministic, in tool)
 
 - Parse Java/Rust source into structured data (fields, types, annotations)
-- Map Java types → MoJu types (`String`→`String`, `int`→`Int`, `List<T>`→`List<T>`, `Set<T>`→`List<T>`, `Map<K,V>`→`Map<K,V>`)
+- Map Java types → Jumo types (`String`→`String`, `int`→`Int`, `List<T>`→`List<T>`, `Set<T>`→`List<T>`, `Map<K,V>`→`Map<K,V>`)
 - Extract enum constants, super class names, annotation attributes
 - Format `.mju` syntax from structured data
 - These are **parse → map → format** data pipelines with no semantic judgment
@@ -72,7 +72,7 @@ This is the core design principle for the pipeline. Split every decision:
 
 ```
 Java source
-  ──[moju-code extract: rules]──> facts.json (fields, types, enum values, attrs)
+  ──[jumo-code extract: rules]──> facts.json (fields, types, enum values, attrs)
   ──[AI semantic merge: skill]──> updated domain package files (cleaned fields, merged items)
 ```
 
@@ -89,9 +89,9 @@ When updating an existing model with extracted facts, do NOT replace — merge:
 | Both, fields differ | **Update** — code field names/types are ground truth; keep model-only design fields |
 | Both, naming differs | **Judge** — decode naming patterns (e.g., `ConfigInfo4Beta` in Java = `ConfigInfoBeta` in model); may alias or merge |
 
-After merge, run `moju verify` to confirm parseability.
+After merge, run `jumo verify` to confirm parseability.
 
-When a domain has clear module clusters or a large ownership surface, split the draft inside `moju/draft/static/<domain>/` by module owner, interface provider, or business responsibility instead of forcing all facts into `domain.mju`. Prefer the directory-per-module form (`module/<name>/_mod.mju` declares the module header, sibling `items.mju` holds its facts) so ownership is inferred from the directory and `owns` lists can be omitted. For file-style modules, `module owns ...` declares ownership explicitly.
+When a domain has clear module clusters or a large ownership surface, split the draft inside `jumo/draft/static/<domain>/` by module owner, interface provider, or business responsibility instead of forcing all facts into `domain.mju`. Prefer the directory-per-module form (`module/<name>/_mod.mju` declares the module header, sibling `items.mju` holds its facts) so ownership is inferred from the directory and `owns` lists can be omitted. For file-style modules, `module owns ...` declares ownership explicitly.
 
 ## Infrastructure Field Filtering
 
@@ -135,15 +135,15 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 ## Authority Rules
 
 - Facts JSON is evidence, not design truth.
-- `moju/draft/` is a candidate model for human review.
-- Only a reviewed model copied into `moju/model/` is authoritative.
+- `jumo/draft/` is a candidate model for human review.
+- Only a reviewed model copied into `jumo/model/` is authoritative.
 - Do not invent routes, protocols, storage adapters, permissions, or business decisions as confirmed facts.
 - If inference is useful but uncertain, include it in the draft and mark it in metadata/review as inferred.
 - **Code fields are ground truth for names and types** — when model and code disagree on a field, prefer the code version unless the model field represents a design concept not yet implemented.
 
 ## Mapping Rules
 
-**Note**: These mappings reflect the MoJu 2.0 design language. The current `moju verify` CLI parser supports a subset. When generating `.mju` files that must pass `moju verify`, adapt as follows:
+**Note**: These mappings reflect the Jumo 2.0 design language. The current `jumo verify` CLI parser supports a subset. When generating `.mju` files that must pass `jumo verify`, adapt as follows:
 - `struct<domain>` → `struct` (omit angle-bracket annotation)
 - `message<command>` → keep as `message<command>` (current syntax); plain `command` is legacy-compatible
 - `message<response>` → keep, or reference the payload struct directly as an `entry`'s `output SomeStruct`
@@ -152,19 +152,19 @@ These are heuristics. When in doubt, keep the field and add a note in `review.md
 - `cap`, `storage`, `failure` → document in `architecture.mju` comments or plan for future CLI support
 - All field types must use PascalCase: `String`, `Int`, `DateTime`, `Boolean`, `List<Type>`
 
-- `type_defs` with `#[moju(kind = "struct")]` (Rust) or `@MoJu(kind = "struct")` (Java) maps to `struct` (or `struct<domain>` in 2.0 design).
-- `type_defs` with `#[moju(kind = "state")]` (Rust) or `@MoJu(kind = "state")` (Java) maps to `state`. Enum constants become state variants.
-- `type_defs` with `#[moju(kind = "event")]` maps to `event`.
-- `type_defs` with `#[moju(kind = "message", role = "command")]` maps to `message<command>`.
-- `type_defs` with `#[moju(kind = "message", role = "response")]` maps to `message<response>`.
-- `type_defs` with `#[moju(kind = "failure", ...)]` maps to `failure` with identity hierarchy. `super_type` becomes `: ParentFailure`.
-- `type_defs` with `#[moju(kind = "actor", ...)]` maps to `actor` with parent chain.
-- `type_defs` with `#[moju(kind = "storage", ...)]` maps to `storage` with kind and durability.
-- `moju_annotations` provide the authoritative kind/role/domain for each type (from `#[moju]` in Rust or `@MoJu` in Java).
-- Java `@MoJu` annotation attributes (`kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`) carry the same metadata as Rust `#[moju(...)]`.
-- Java enums annotated with `@MoJu(kind = "state")` map to `state` just as Rust enums do.
+- `type_defs` with `#[jumo(kind = "struct")]` (Rust) or `@Jumo(kind = "struct")` (Java) maps to `struct` (or `struct<domain>` in 2.0 design).
+- `type_defs` with `#[jumo(kind = "state")]` (Rust) or `@Jumo(kind = "state")` (Java) maps to `state`. Enum constants become state variants.
+- `type_defs` with `#[jumo(kind = "event")]` maps to `event`.
+- `type_defs` with `#[jumo(kind = "message", role = "command")]` maps to `message<command>`.
+- `type_defs` with `#[jumo(kind = "message", role = "response")]` maps to `message<response>`.
+- `type_defs` with `#[jumo(kind = "failure", ...)]` maps to `failure` with identity hierarchy. `super_type` becomes `: ParentFailure`.
+- `type_defs` with `#[jumo(kind = "actor", ...)]` maps to `actor` with parent chain.
+- `type_defs` with `#[jumo(kind = "storage", ...)]` maps to `storage` with kind and durability.
+- `jumo_annotations` provide the authoritative kind/role/domain for each type (from `#[jumo]` in Rust or `@Jumo` in Java).
+- Java `@Jumo` annotation attributes (`kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`) carry the same metadata as Rust `#[jumo(...)]`.
+- Java enums annotated with `@Jumo(kind = "state")` map to `state` just as Rust enums do.
 - Trait definitions under static domain capability areas map to `cap` with `op` for each method signature.
-- **Rust `trait` is not valid MoJu syntax**. Rust traits map to MoJu `cap` (capability) definitions in `behavior.mju`. Do NOT write `trait X { ... }` in `.mju` files — it will fail `moju verify`.
+- **Rust `trait` is not valid Jumo syntax**. Rust traits map to Jumo `cap` (capability) definitions in `behavior.mju`. Do NOT write `trait X { ... }` in `.mju` files — it will fail `jumo verify`.
 - `state_writes` and `state_guards` can suggest `lifecycle` transitions, but should be marked inferred.
 - `struct_methods` contains all qualifying instance methods on each struct (Rust: `pub`/`pub(crate)` + `&mut self`; Java: public instance with params, excluding getters/setters). AI selects up to 5 per struct to become `op` declarations.
 - `struct_relations` contains directed edges between structs. `signal`: `field` (A holds B in a field) or `op_param` (A's method receives B-type param). Extra detail: `Handler<Event>` trait impls (Rust) and `@EventListener` annotations (Java) are tagged in the detail field. AI uses this graph for domain clustering and scenario inference.
@@ -214,7 +214,7 @@ region<page> AuditReportScreen {
 
 ## Java Type Mapping Table
 
-| Java Type | MoJu Type |
+| Java Type | Jumo Type |
 |-----------|-----------|
 | `String` | `String` |
 | `int`, `Integer`, `long`, `Long`, `short`, `Short`, `byte`, `Byte` | `Int` |
@@ -233,10 +233,10 @@ When `facts.struct_methods` is present, the AI must select up to **5 methods per
 
 Selection is based on the AI's understanding of business context — method names, parameter types, and the struct's role in the domain. Do not use mechanical heuristics.
 
-Each selected method becomes an `op` declaration (MoJu 2.0 design syntax — for CLI-compatible output, document operations in meta tags or comments):
+Each selected method becomes an `op` declaration (Jumo 2.0 design syntax — for CLI-compatible output, document operations in meta tags or comments):
 
 ```mju
-// MoJu 2.0 design syntax:
+// Jumo 2.0 design syntax:
 struct Inventory {
   meta {
     label zh "库存"
@@ -252,7 +252,7 @@ struct Inventory {
 }
 ```
 
-For `moju verify` compatibility, omit `op` declarations and record operations elsewhere:
+For `jumo verify` compatibility, omit `op` declarations and record operations elsewhere:
 
 ```mju
 struct Inventory {
@@ -287,11 +287,11 @@ Relations with high density form a natural domain boundary. The AI groups struct
 ```
 High density cluster → same static/ directory
   Order ←→ PaymentIntent ←→ Cart ←→ Inventory
-  -> moju/draft/static/business/
+  -> jumo/draft/static/business/
 
 Sparse / isolated → config or cross-cutting
-  RunPolicy (0 relations) -> moju/draft/static/business/ as struct<config>
-  HttpServerConfig (0 relations) -> moju/draft/static/business/ as struct<config>
+  RunPolicy (0 relations) -> jumo/draft/static/business/ as struct<config>
+  HttpServerConfig (0 relations) -> jumo/draft/static/business/ as struct<config>
 ```
 
 AI uses its own judgment to decide the right domain names and boundaries. Do not hardcode "Business" for all clusters — infer domain names from the struct names in each cluster.
@@ -371,7 +371,7 @@ Write `review.md` with:
 
 ## Output Discipline
 
-- Keep all `.mju` files parseable. Run `moju verify moju/draft` to confirm.
+- Keep all `.mju` files parseable. Run `jumo verify jumo/draft` to confirm.
 - Prefer a smaller valid draft over a broad invalid model.
 - Put uncertain reasoning in `extraction.meta.json` and `review.md`, not in comments inside `.mju`.
-- `moju/draft/` is temporary. Promote reviewed content into `moju/model/`, then remove draft.
+- `jumo/draft/` is temporary. Promote reviewed content into `jumo/model/`, then remove draft.

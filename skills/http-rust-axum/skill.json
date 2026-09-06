@@ -2,11 +2,11 @@
   "name": "http-rust-axum",
   "version": "2.0.0",
   "display_name": "HTTP Rust Axum",
-  "description": "How to implement MoJu 2.0 runtime service target<bin,http> / HttpRust skeletons. Covers axum Router construction, binding.mju routes/statuses/outcomes, actor identity, config/storage wiring, handler structure, and protocol separation.",
-  "author": "moju",
+  "description": "How to implement Jumo 2.0 runtime service target<bin,http> / HttpRust skeletons. Covers axum Router construction, binding.mju routes/statuses/outcomes, actor identity, config/storage wiring, handler structure, and protocol separation.",
+  "author": "jumo",
   "license": "MIT",
-  "platforms": ["claude-code", "codex"],
-  "categories": ["moju", "implementation", "axum"],
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "implementation", "axum"],
   "triggers": {
     "keywords": [
       "HttpRust",
@@ -23,7 +23,7 @@
     ],
     "patterns": [
       "implement.*http.*rust",
-      "axum.*moju",
+      "axum.*jumo",
       "http.*bin.*target",
       "profile.*HttpRust"
     ]

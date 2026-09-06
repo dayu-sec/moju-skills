@@ -1,6 +1,6 @@
 ---
 name: http-rust-axum
-description: How to implement MoJu 2.0 runtime service target<bin,http> / HttpRust skeletons. Covers axum Router construction, binding.mju routes/statuses/outcomes, actor identity, config/storage wiring, handler structure, and protocol separation.
+description: How to implement Jumo 2.0 runtime service target<bin,http> / HttpRust skeletons. Covers axum Router construction, binding.mju routes/statuses/outcomes, actor identity, config/storage wiring, handler structure, and protocol separation.
 triggers:
   - implementing HttpRust
   - target<bin,http>
@@ -15,7 +15,7 @@ Use this skill for `profile HttpRust for ... target<bin,http>` or a generated `r
 ## Read First
 
 - `AI_TASKS.md`
-- `MOJU_MODEL.md`
+- `JUMO_MODEL.md`
 - `src/api/*`
 - `src/app/*`
 - `src/domain/messages/*`
@@ -35,13 +35,13 @@ Use this skill for `profile HttpRust for ... target<bin,http>` or a generated `r
 - Keep protocol concerns in `src/api` and orchestration in `src/app`.
 - Keep domain entities/states in the code generated from `module<entity>` and business rules/policies in code generated from `module<logic>`.
 - Do not treat `module<service>` as the executable boundary; runtime `service` is the process/site/daemon boundary.
-- Preserve `#[derive(MoJu)]` and `#[moju(...)]` metadata on generated domain types.
+- Preserve `#[derive(Jumo)]` and `#[jumo(...)]` metadata on generated domain types.
 
 ## Do Not
 
 - Do not invent HTTP routes or statuses.
 - Do not put storage adapter code in handlers.
-- Do not return a single generic success response when MoJu declares multiple response messages.
+- Do not return a single generic success response when Jumo declares multiple response messages.
 - Do not ignore actor identity or authorization declarations just because the generated handler compiles.
 - Do not collapse capability clients into domain types.
 

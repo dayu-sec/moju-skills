@@ -1,10 +1,10 @@
 ---
-name: moju-model-understanding
-description: How to understand current MoJu 2.0 language and model concepts when drafting models, reviewing moju-studio views, or implementing generated code. Covers static domains, runtime subsystems/services, use cases, layout regions, topology, bindings, profiles, validation, and common pitfalls.
+name: jumo-model-understanding
+description: How to understand current Jumo 2.0 language and model concepts when drafting models, reviewing jumo-studio views, or implementing generated code. Covers static domains, runtime subsystems/services, use cases, layout regions, topology, bindings, profiles, validation, and common pitfalls.
 triggers:
-  - drafting MoJu models
-  - interpreting MoJu model files
-  - understanding moju/model
+  - drafting Jumo models
+  - interpreting Jumo model files
+  - understanding jumo/model
   - understanding domain.mju
   - understanding behavior.mju
   - understanding architecture.mju
@@ -13,23 +13,23 @@ triggers:
   - understanding layout.mju
   - understanding topology.mju
   - understanding profile.mju
-  - reading MoJu model files
-  - implementing generated MoJu skeleton
+  - reading Jumo model files
+  - implementing generated Jumo skeleton
   - reading AI_TASKS.md
 ---
 
-# MoJu Model Understanding
+# Jumo Model Understanding
 
-Use this skill before drafting MoJu models, editing `moju/model`, reviewing moju-studio views, or implementing generated code from a MoJu model.
+Use this skill before drafting Jumo models, editing `jumo/model`, reviewing jumo-studio views, or implementing generated code from a Jumo model.
 
 ## Current Model Layout
 
-The current canonical model root is `moju/model/`. New projects use the MoJu 2.0 split between static design facts and runtime deployable boundaries.
+The current canonical model root is `jumo/model/`. New projects use the Jumo 2.0 split between static design facts and runtime deployable boundaries.
 
 Recommended 2.0 layout (see `project-organization.md` for full reference):
 
 ```text
-moju/model/
+jumo/model/
   architecture.mju              # root-level: layer + dependency_rule (cross-domain)
   profile.mju                   # generation strategy, not a domain fact
   static/
@@ -48,6 +48,7 @@ moju/model/
       verify.mju                # verify cases for flows
       binding.mju               # implementation bindings (route, storage, config)
       rules.md                  # optional: natural language rules for codegen
+    runtime/global/<file>.mju    # cross-subsystem orchestration flows; declare `domain <Name>` to override the Global path domain
   runtime/
     subsystem/
       <subsystem>/
@@ -60,7 +61,7 @@ moju/model/
         target.mju              # target<bin,http> + modules list
         assembly.mju            # optional: kind, scale, run
     topology.mju                # node, resource, network, bind, link
-  moju-layout.json
+  jumo-layout.json
 ```
 
 Key principles:
@@ -86,14 +87,14 @@ All elements may carry a `meta` block for display labels, summaries, and tags.
 - `message<command> Name = BaseStruct { ... }` (and `command Name = BaseStruct { ... }`) inherit all fields of `BaseStruct` and may add more. This shares request context (e.g. `requested_by`) across commands instead of repeating the field. Also works for `message<response>`.
 - `state` declares a state space with typed fields. Example: `state BackupRecordState { unique id: String status: String started_at: DateTime }`.
 - `variant` declares tagged alternatives. Example: `variant BackupType { Full Incremental }`. Variants may have `meta`.
-- `flow` describes orchestration using actors, responsibility lanes, entry triggers, signal triggers, and steps. Prefer binding the external command to the first activity: `flow BackupFlow { actor Admin step Start in Admin by StartBackup { ... next Persist } step<stop> Persist in Worker by BackupRequested { ... } }`. `in` may reference a declared lane or a flow participant directly. The first `by Command` is projected to `Flow.trigger`; a later `by Event` step starts an independent signal-driven sequence, and a later `by Command` step is a linear driver reached through an explicit `next` / `goto` edge — never through source order. **Control flow is fully explicit: every normal step must terminate with `next <step>` / `goto <step>` / `match { }`, or be declared `step<stop>` / `step<exit>`; source order is layout only and `moju verify` rejects a step with no explicit exit.** The legacy flow-level `trigger` remains compatible and must match the first `by` when both are present. React steps cannot declare `by`. `step` is optional: a step-less placeholder flow uses its flow-level `trigger` as the implicit entry.
+- `flow` describes orchestration using actors, responsibility lanes, entry triggers, signal triggers, and steps. Prefer binding the external command to the first activity: `flow BackupFlow { actor Admin step Start in Admin by StartBackup { ... next Persist } step<stop> Persist in Worker by BackupRequested { ... } }`. `in` may reference a declared lane or a flow participant directly. The first `by Command` is projected to `Flow.trigger`; a later `by Event` step starts an independent signal-driven sequence, and a later `by Command` step is a linear driver reached through an explicit `next` / `goto` edge — never through source order. **Control flow is fully explicit: every normal step must terminate with `next <step>` / `goto <step>` / `match { }`, or be declared `step<stop>` / `step<exit>`; source order is layout only and `jumo verify` rejects a step with no explicit exit.** The legacy flow-level `trigger` remains compatible and must match the first `by` when both are present. React steps cannot declare `by`. `step` is optional: a step-less placeholder flow uses its flow-level `trigger` as the implicit entry. Step data flow: `input X` reads an in-world dependency (legacy sugar for `receive X from input`); `receive X from <source>` is the canonical inbound form — data enters the step from an explicit producer (`from input` / `from <Flow>` / `from <Op>` / `from <Step>`), and is how you express "the result of an external call" (e.g. `receive GatewayInitialConfig from GetGatewayInitialConfigFlow`); `create X` produces X locally; `emit E` sends E out.
 - `module` describes ownership, responsibility, and layer assignment. Syntax: `module Name { layer Application responsible_for "..." }`. In the directory-per-module layout, `owns` is inferred from file placement and can be omitted; `responsible_for` is optional and defaults to the meta summary.
 - `layer` and `dependency_rule` in root `architecture.mju` define the system's layered architecture.
 - `verify` blocks assert flow correctness. Syntax: `verify Name for flow FlowName { given { ... } when Command expect { ... } }`.
 
-### Currently available in moju-studio views only (not in CLI parser)
+### Currently available in jumo-studio views only (not in CLI parser)
 
-These elements are parsed and rendered by moju-studio but are not yet supported by the `moju verify` CLI parser:
+These elements are parsed and rendered by jumo-studio but are not yet supported by the `jumo verify` CLI parser:
 
 - `struct<domain>`, `struct<config>`, `struct<ui>` — typed struct annotations
 - `actor<human>`, `actor<system>` — actor role annotations
@@ -132,7 +133,7 @@ These elements are parsed and rendered by moju-studio but are not yet supported 
 For small domains, keep core facts in `static/<domain>/domain.mju`. When the domain grows, split by module owner, provider, or responsibility while keeping every file in the same static domain directory:
 
 ```text
-moju/model/static/control/
+jumo/model/static/control/
   domain.mju                    # domain overview or index
   module.mju                    # layer, module declarations (owns inferred or explicit)
   user-facing-interface.mju     # user/admin interfaces, entries, messages, entry flows
@@ -149,7 +150,7 @@ For file-style modules (module header plus items in one file, or several modules
 
 ## Use Cases
 
-Runtime subsystem use cases belong beside the subsystem declaration, for example `moju/model/runtime/subsystem/backup/usecase.mju`. Root/platform use cases can live in `runtime/usecase.mju` only when they are explicitly cross-subsystem.
+Runtime subsystem use cases belong beside the subsystem declaration, for example `jumo/model/runtime/subsystem/backup/usecase.mju`. Root/platform use cases can live in `runtime/usecase.mju` only when they are explicitly cross-subsystem.
 
 ```mju
 usecase ViewDailyAuditReport {
@@ -187,7 +188,7 @@ subsystem Backup {
 }
 ```
 
-In `moju-studio`, `runtime/subsystem/<name>/usecase.mju` and `layout.mju` are loaded as the subsystem's `System.<Name>` scope. `service` entries are runtime composition facts; they should make the subsystem visible, but a service-only subsystem must not open an empty static layer diagram unless it also uses modules.
+In `jumo-studio`, `runtime/subsystem/<name>/usecase.mju` and `layout.mju` are loaded as the subsystem's `System.<Name>` scope. `service` entries are runtime composition facts; they should make the subsystem visible, but a service-only subsystem must not open an empty static layer diagram unless it also uses modules.
 
 ## Static Module Kinds
 
@@ -241,7 +242,7 @@ region<section> DailyAuditFindingList {
 bind System.AccessAudit.DailyAuditFindingView to DailyAuditFindingRow
 ```
 
-Supported region kinds are `region`, `page`, `window`, and `section`. Supported orientation values are `vertical`, `horizontal`, and `grid`. `contains` may carry placement attributes such as `area`, `row`, `col`, `row_span`, `col_span`, `width`, `height`, and `align`. Nested region placement can be expressed in `.mju`; studio may also store manual view coordinates in `moju-layout.json`.
+Supported region kinds are `region`, `page`, `window`, and `section`. Supported orientation values are `vertical`, `horizontal`, and `grid`. `contains` may carry placement attributes such as `area`, `row`, `col`, `row_span`, `col_span`, `width`, `height`, and `align`. Nested region placement can be expressed in `.mju`; studio may also store manual view coordinates in `jumo-layout.json`.
 
 ## Dataflows
 
@@ -354,13 +355,13 @@ Convenience defaults (omit to get the default, keep to override):
 ## Validation Loop
 
 ```bash
-moju init /tmp/example
-moju verify moju/model
-moju-code diff <project>
-moju-code align <project> --check
+jumo init /tmp/example
+jumo verify jumo/model
+jumo-code diff <project>
+jumo-code align <project> --check
 ```
 
-Use `moju init` as the current syntax reference when uncertain. Verify small edits frequently.
+Use `jumo init` as the current syntax reference when uncertain. Verify small edits frequently.
 
 ## Common Pitfalls
 
@@ -387,8 +388,8 @@ Use `moju init` as the current syntax reference when uncertain. Verify small edi
 - Prefer one module per directory (`module/<name>/_mod.mju` + `items.mju`) so `owns` can be inferred instead of declared.
 - Prefer `output SomeStruct` over one-field `message<response> XReturned { field: SomeStruct }` wrapper messages.
 - Use `message<command> Name = BaseStruct { ... }` / `command Name = BaseStruct { ... }` to share repeated request fields (e.g. `requested_by`).
-- Run `moju verify` after every model edit — verify incrementally, one concept at a time.
-- Use `moju init` as the current syntax reference when uncertain about supported syntax.
+- Run `jumo verify` after every model edit — verify incrementally, one concept at a time.
+- Use `jumo init` as the current syntax reference when uncertain about supported syntax.
 - Put module definitions in `static/<domain>/module.mju` — NOT `architecture.mju`.
 - Put build targets in `runtime/service/<name>/target.mju` — NOT `binding.mju`.
 - Put service declarations in `runtime/service/<name>/service.mju` with `kind bin<http>` + `uses module`.

@@ -1,0 +1,38 @@
+{
+  "name": "jumo-model-align",
+  "version": "2.0.0",
+  "display_name": "Jumo Model Align",
+  "description": "How to keep current Jumo 2.0 models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, static domain package module splits, runtime subsystem/service awareness, rename propagation, and code annotation discipline.",
+  "author": "jumo",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "alignment"],
+  "triggers": {
+    "keywords": [
+      "model-code alignment",
+      "jumo-code diff",
+      "jumo-code align",
+      "code annotations out of sync",
+      "syncing model and code",
+      "fixing diff mismatches",
+      "typed field sync",
+      "module owns maintenance",
+      "domain package",
+      "module split",
+      "static runtime",
+      "runtime service",
+      "subsystem model sync",
+      "layout.mju"
+    ],
+    "patterns": [
+      "jumo.*diff",
+      "jumo.*align",
+      "sync.*jumo.*code",
+      "fix.*jumo.*annotation",
+      "model.*code.*out.*of.*sync"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "jumo-impl-track",
+  "version": "1.0.0",
+  "display_name": "Jumo Usecase Implementation Tracking",
+  "description": "Read, write, and validate the Jumo usecase implementation tracking file (jumo/model/impl/usecases.json) that maps usecases to their code entry paths. Covers the JSON structure, jumo-code impl-check, status/progress semantics, semantic anchors, and qualified usecase references.",
+  "author": "jumo",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "implementation", "tracking"],
+  "triggers": {
+    "keywords": [
+      "usecase implementation tracking",
+      "impl tracking",
+      "usecases.json",
+      "jumo-code impl-check",
+      "which usecases are implemented",
+      "code entry paths",
+      "implementation status",
+      "progress percentage",
+      "dangling usecase reference",
+      "impl schema_version"
+    ],
+    "patterns": [
+      "impl.*track",
+      "usecase.*implemented",
+      "usecases\\.json",
+      "jumo.*impl-check"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

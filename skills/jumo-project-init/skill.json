@@ -1,0 +1,36 @@
+{
+  "name": "jumo-project-init",
+  "version": "2.0.0",
+  "display_name": "Jumo Project Init",
+  "description": "Setting up the current Jumo 2.0 modeling directory structure and tooling pipeline for a project. Covers jumo/model static/runtime layout, domain package module splits, runtime services, subsystem/usecase/layout files, tool chain, project resolution, and initial reverse-modeling workflow.",
+  "author": "jumo",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "setup"],
+  "triggers": {
+    "keywords": [
+      "jumo init",
+      "jumo project",
+      "jumo setup",
+      "jumo directory",
+      "jumo structure",
+      "jumo/model",
+      "domain package",
+      "module split",
+      "static runtime",
+      "runtime service",
+      "jumo studio",
+      "subsystem usecase",
+      "layout.mju"
+    ],
+    "patterns": [
+      "set.*up.*jumo",
+      "init.*jumo.*project",
+      "create.*jumo.*directory",
+      "jumo.*project.*structure"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "jumo-code-quality",
+  "version": "1.1.0",
+  "display_name": "Jumo Code Quality",
+  "description": "How to generate and interpret model-independent code quality reports with jumo-code code-quality. Covers the code-quality.json contract (file scale, function complexity, the modules[] directory tree with own vs subtree rollups, warnings), cargo llvm-cov coverage import, thresholds/exclude config, --check CI gating, and reading reports to plan refactors.",
+  "author": "jumo",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "rust", "quality", "coverage", "refactor"],
+  "triggers": {
+    "keywords": [
+      "generate a quality report",
+      "code quality report",
+      "code-quality.json",
+      "jumo-code code-quality",
+      "code quality analysis",
+      "llvm-cov coverage",
+      "coverage import",
+      "quality gate",
+      "refactor target",
+      "code.refactor_target",
+      "quality view",
+      "cyclomatic complexity",
+      "function too long",
+      "directory module rollup",
+      "module tree",
+      "subtree complexity",
+      "own vs subtree",
+      "file too long"
+    ],
+    "patterns": [
+      "code.*quality.*report",
+      "code-quality.json",
+      "jumo-code.*code-quality",
+      "llvm-cov.*import",
+      "quality.*gate.*check",
+      "refactor.*flow_diagram",
+      "over.*threshold.*function",
+      "high.*cyclomatic"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

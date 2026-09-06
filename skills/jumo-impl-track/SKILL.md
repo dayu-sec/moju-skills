@@ -1,11 +1,11 @@
 ---
-name: moju-impl-track
-description: How to read, write, and validate the MoJu usecase implementation tracking file (moju/model/impl/usecases.json) that maps usecases to their code entry paths. Covers the JSON structure, moju-code impl-check, status/progress semantics, semantic anchors, and qualified usecase references.
+name: jumo-impl-track
+description: How to read, write, and validate the Jumo usecase implementation tracking file (jumo/model/impl/usecases.json) that maps usecases to their code entry paths. Covers the JSON structure, jumo-code impl-check, status/progress semantics, semantic anchors, and qualified usecase references.
 triggers:
   - usecase implementation tracking
   - impl tracking
   - usecases.json
-  - moju-code impl-check
+  - jumo-code impl-check
   - which usecases are implemented
   - code entry paths
   - implementation status
@@ -14,7 +14,7 @@ triggers:
   - impl schema_version
 ---
 
-# MoJu Usecase Implementation Tracking
+# Jumo Usecase Implementation Tracking
 
 Use this skill when working with the file `<model-root>/impl/usecases.json`, which records each usecase's implementation status, progress, and **code entry paths** (a usecase usually maps to multiple endpoints/handlers).
 
@@ -22,10 +22,10 @@ Use this skill when working with the file `<model-root>/impl/usecases.json`, whi
 
 A data file (JSON) that establishes the **model ↔ code relationship** for AI and automation. It is deliberately separate from the model spec (`.mju`):
 
-- `moju/model/` — model spec (MoJu language)
-- `moju/model/impl/usecases.json` — implementation tracking (data)
+- `jumo/model/` — model spec (Jumo language)
+- `jumo/model/impl/usecases.json` — implementation tracking (data)
 
-The authoritative structure lives in `moju-code/src/impl_track.rs` (serde types, `deny_unknown_fields`). Spec is never touched by this data.
+The authoritative structure lives in `jumo-code/src/impl_track.rs` (serde types, `deny_unknown_fields`). Spec is never touched by this data.
 
 ## Structure
 
@@ -62,10 +62,10 @@ Field rules:
 ## Validation
 
 ```text
-moju-code impl-check <project> [--impl <path>]
+jumo-code impl-check <project> [--impl <path>]
 ```
 
-- Default path: `<project>/moju/model/impl/usecases.json`.
+- Default path: `<project>/jumo/model/impl/usecases.json`.
 - Exit 0 = clean; exit 1 = errors found.
 - What it checks:
   - `deny_unknown_fields` — extra/typo fields are rejected.
@@ -85,11 +85,11 @@ moju-code impl-check <project> [--impl <path>]
 ## Workflow
 
 ```text
-model/code change -> update moju/model/impl/usecases.json -> moju-code impl-check <project> -> green
+model/code change -> update jumo/model/impl/usecases.json -> jumo-code impl-check <project> -> green
 ```
 
-Green `impl-check` means: structure matches the schema contract and every usecase/flow reference resolves against the model. Acceptance of the implementation itself still goes through `moju-code diff` + tests.
+Green `impl-check` means: structure matches the schema contract and every usecase/flow reference resolves against the model. Acceptance of the implementation itself still goes through `jumo-code diff` + tests.
 
 ## Related capability
 
-- `moju-code subsystem-flows <project> [--subsystem <name>]` derives the flows a subsystem depends on (declared `uses flow` + usecase `flow` refs + match transitive targets). Use it when the question is "which orchestration does this subsystem use" — complementary to impl-check's "where is this usecase implemented". Model subsystems may declare `uses flow X` to reference module-owned flows explicitly.
+- `jumo-code subsystem-flows <project> [--subsystem <name>]` derives the flows a subsystem depends on (declared `uses flow` + usecase `flow` refs + match transitive targets). Use it when the question is "which orchestration does this subsystem use" — complementary to impl-check's "where is this usecase implemented". Model subsystems may declare `uses flow X` to reference module-owned flows explicitly.

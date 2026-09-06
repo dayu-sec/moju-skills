@@ -1,0 +1,37 @@
+{
+  "name": "jumo-extract",
+  "version": "1.1.0",
+  "display_name": "Jumo Extract",
+  "description": "How to extract Jumo facts from Rust and Java projects. Covers current jumo-code extract usage, Rust/Java annotation scanning, type mapping, field filtering, facts.json, and reverse-modeling handoff to jumo/draft.",
+  "author": "jumo",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "rust", "java", "extraction"],
+  "triggers": {
+    "keywords": [
+      "jumo extract",
+      "jumo rust extract",
+      "jumo java extract",
+      "rust facts",
+      "java facts",
+      "rust jumo annotations",
+      "java jumo annotations",
+      "javaextractor",
+      "jumo-code extract rust",
+      "jumo-code extract java",
+      "@Jumo annotation extract"
+    ],
+    "patterns": [
+      "extract.*java.*jumo",
+      "extract.*rust.*jumo",
+      "java.*facts.*json",
+      "rust.*facts.*json",
+      "scan.*java.*annotations",
+      "scan.*rust.*annotations",
+      "jumo.*extract"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

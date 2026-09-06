@@ -1,10 +1,10 @@
 ---
-name: moju-model-align
-description: How to keep current MoJu 2.0 models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, static domain module splits, runtime subsystem/service awareness, rename propagation, and code annotation discipline.
+name: jumo-model-align
+description: How to keep current Jumo 2.0 models and code annotations in sync. Covers diff diagnosis, alignment loop, typed fields, repeated owns, static domain module splits, runtime subsystem/service awareness, rename propagation, and code annotation discipline.
 triggers:
   - model-code alignment
-  - moju-code diff
-  - moju-code align
+  - jumo-code diff
+  - jumo-code align
   - code annotations out of sync
   - syncing model and code
   - fixing diff mismatches
@@ -13,37 +13,37 @@ triggers:
   - subsystem model sync
 ---
 
-# MoJu Model Align
+# Jumo Model Align
 
-Use this skill to keep MoJu model files and code annotations consistent.
+Use this skill to keep Jumo model files and code annotations consistent.
 
 ## Goal
 
-`moju-code diff` reports zero differences between `moju/model/` and code annotations.
+`jumo-code diff` reports zero differences between `jumo/model/` and code annotations.
 
 ## Direction
 
 ```
-moju/model/ (authoritative)  --align-->  code annotations (mirror)
+jumo/model/ (authoritative)  --align-->  code annotations (mirror)
 ```
 
-Never the reverse. If code has changed, update the model first through `moju/draft/`, run `moju verify`, promote to `moju/model/`, then align code.
+Never the reverse. If code has changed, update the model first through `jumo/draft/`, run `jumo verify`, promote to `jumo/model/`, then align code.
 
 ## The Alignment Loop
 
 ```
-moju-code diff  ->  review gaps  ->  fix model if needed  ->  moju verify  ->  moju-code align --write  ->  cargo check / mvnw compile
+jumo-code diff  ->  review gaps  ->  fix model if needed  ->  jumo verify  ->  jumo-code align --write  ->  cargo check / mvnw compile
        ↑                                                                                                          |
        +----------------------------------------------------------------------------------------------------------+
 ```
 
 | Step | Command | What it does |
 |------|---------|-------------|
-| 1. diff | `moju-code diff <project>` | Show what's out of sync |
+| 1. diff | `jumo-code diff <project>` | Show what's out of sync |
 | 2. review | read the diff output | Decide: model wrong, or code missing annotations? |
-| 3. fix model | edit `moju/draft/` or reviewed `moju/model/` | If model needs updating: add/remove items, fix typed fields, update module owns/subsystems/usecases |
-| 4. verify | `moju verify` | Ensure `.mju` files parse, flow references resolve, owns are complete |
-| 5. align | `moju-code align <project> --write` | Push model metadata into code as `#[moju]` annotations |
+| 3. fix model | edit `jumo/draft/` or reviewed `jumo/model/` | If model needs updating: add/remove items, fix typed fields, update module owns/subsystems/usecases |
+| 4. verify | `jumo verify` | Ensure `.mju` files parse, flow references resolve, owns are complete |
+| 5. align | `jumo-code align <project> --write` | Push model metadata into code as `#[jumo]` annotations |
 | 6. check | `cargo check` / `mvnw compile` | Ensure annotated code compiles |
 
 If step 2 determines the model is already correct, skip steps 3-4 and go directly to align.
@@ -53,22 +53,22 @@ If step 2 determines the model is already correct, skip steps 3-4 and go directl
 | Category | Meaning | Action |
 |----------|---------|--------|
 | 注解不匹配 | Model spec differs from code annotation | Review which side is correct, update the other |
-| 模型有、代码无 | Type exists in model but has no `#[moju]` | Run `align --write` to add annotations |
-| 代码已注解、模型无 | Code has `#[moju]` but model has no matching type | If the type should be modeled, add to draft first; otherwise remove annotation |
+| 模型有、代码无 | Type exists in model but has no `#[jumo]` | Run `align --write` to add annotations |
+| 代码已注解、模型无 | Code has `#[jumo]` but model has no matching type | If the type should be modeled, add to draft first; otherwise remove annotation |
 | 代码无注解、模型也无 | Type in code without annotation, not in model | Decide if it should be modeled |
 
 ## Diagnosing Root Causes
 
 When `diff` shows many entries, check:
 
-- **owns missing**: If a code-facing type exists in any `moju/model/static/<domain>/*.mju` file but no module owns it (in the directory-per-module layout ownership is inferred; in file-style modules it is declared in the module header), code alignment may not know which module annotation to write.
+- **owns missing**: If a code-facing type exists in any `jumo/model/static/<domain>/*.mju` file but no module owns it (in the directory-per-module layout ownership is inferred; in file-style modules it is declared in the module header), code alignment may not know which module annotation to write.
 - **module kind too generic**: Domain structs/states often belong in `module<entity>`; rules, policies, and calculations often belong in `module<logic>`.
 - **struct+kind not merged**: Model uses `struct X { kind: XKind }` + `state XKind`, but code uses a single `state X` enum directly.
 - **naming inconsistency**: Model and code use different names for the same concept.
-- **wrong scope**: A subsystem use case or layout region was added under static domain files instead of `moju/model/runtime/subsystem/<name>/`.
+- **wrong scope**: A subsystem use case or layout region was added under static domain files instead of `jumo/model/runtime/subsystem/<name>/`.
 - **service/module confusion**: A deployable process was modeled as only `module<service>` instead of a runtime `service` under `runtime/service/<name>/`.
 - **missing `meta` labels**: Studio display falls back to raw identifiers when `meta label zh/en` is absent.
-- **stale draft shadowing model**: A leftover `moju/draft/` can make tools read the wrong copy depending on command and context.
+- **stale draft shadowing model**: A leftover `jumo/draft/` can make tools read the wrong copy depending on command and context.
 
 ## Struct+Kind Merge Rule
 
@@ -87,7 +87,7 @@ Update the owning struct: `kind: ActionKind` → `kind: Action`.
 
 ## Typed Field Sync
 
-Current MoJu supports typed fields with PascalCase types:
+Current Jumo supports typed fields with PascalCase types:
 
 ```mju
 struct CustomerData {
@@ -121,7 +121,7 @@ When code and model differ on fields:
 Current parser accumulates repeated `owns` lines. Multi-line `owns` is valid:
 
 ```mju
-module MoJuBinding {
+module JumoBinding {
   owns Binding, InterfaceBinding
   owns StorageBinding, ConfigBinding
   owns ConfigProvider, ConfigFileFormat
@@ -152,10 +152,10 @@ Every code-facing item in the static domain package belongs to exactly one modul
 
 ## Runtime Subsystem, Service, And Usecase Awareness
 
-- Subsystem use cases belong in `moju/model/runtime/subsystem/<name>/usecase.mju`.
-- Subsystem layout belongs in `moju/model/runtime/subsystem/<name>/layout.mju`.
-- Subsystem declarations belong in `moju/model/runtime/subsystem/<name>/subsystem.mju`.
-- Runtime services belong in `moju/model/runtime/service/<service>/service.mju`.
+- Subsystem use cases belong in `jumo/model/runtime/subsystem/<name>/usecase.mju`.
+- Subsystem layout belongs in `jumo/model/runtime/subsystem/<name>/layout.mju`.
+- Subsystem declarations belong in `jumo/model/runtime/subsystem/<name>/subsystem.mju`.
+- Runtime services belong in `jumo/model/runtime/service/<service>/service.mju`.
 - `subsystem` blocks compose services and may directly use modules:
 
 ```mju
@@ -174,7 +174,7 @@ service access-audit-api {
 }
 ```
 
-If `moju-code diff` or studio views show duplicated `System.*` items, check whether files were placed in the wrong directory or loaded under the wrong domain scope.
+If `jumo-code diff` or studio views show duplicated `System.*` items, check whether files were placed in the wrong directory or loaded under the wrong domain scope.
 
 ## Rename Propagation
 
@@ -183,19 +183,19 @@ When renaming a type:
 2. Update the owning module: rename in the module's `owns` list (file-style modules) or move the item to the right module directory (directory-per-module layout)
 3. Update all struct fields that reference the old name
 4. Update usecase/flow/scenario/dataflow/layout references
-5. Run `moju verify` and `moju-code diff`
+5. Run `jumo verify` and `jumo-code diff`
 
 ## Code Annotation Discipline
 
-After a `moju/draft` model has been reviewed, validated, and promoted into `moju/model/`, sync metadata back to code:
+After a `jumo/draft` model has been reviewed, validated, and promoted into `jumo/model/`, sync metadata back to code:
 
 ### Rust
 
 ```rust
-#[derive(MoJu)]
-#[moju(kind = "message", role = "command", domain = "Business")]
+#[derive(Jumo)]
+#[jumo(kind = "message", role = "command", domain = "Business")]
 pub struct SubmitOrder {
-    #[moju(unique)]
+    #[jumo(unique)]
     pub id: String,
 }
 ```
@@ -203,7 +203,7 @@ pub struct SubmitOrder {
 ### Java
 
 ```java
-@MoJu(kind = "message", role = "command", domain = "Business")
+@Jumo(kind = "message", role = "command", domain = "Business")
 public record SubmitOrder(String id, String customerId) {}
 ```
 
@@ -243,13 +243,13 @@ public record SubmitOrder(String id, String customerId) {}
 - Model is always the source of truth. Change it first, then align code.
 - Run `diff` before and after every alignment session.
 - Use `--check` before `--write` to preview changes.
-- Keep `moju/model/` as the reviewed source and remove stale drafts after promotion.
+- Keep `jumo/model/` as the reviewed source and remove stale drafts after promotion.
 - Keep new authoritative paths in `static/<domain>` and `runtime/...`; do not add new legacy `domain/` or `subsystem/` roots.
 
 ## Do Not
 
 - Do not run `align --write` blindly. Understand why each difference exists first.
-- Do not add `#[moju]` / `@MoJu` to types that are pure implementation details.
+- Do not add `#[jumo]` / `@Jumo` to types that are pure implementation details.
 - Do not delete model types just to make diff pass.
 - Do not let a single module own >15 types — split by business responsibility.
 - Do not hide domain entity ownership or business rules in an unrelated `module<service>` when `module<entity>` or `module<logic>` is the clearer static boundary.

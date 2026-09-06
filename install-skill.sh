@@ -5,50 +5,56 @@ usage() {
   cat <<EOF
 Usage: $0 [skill-name|--all] [options]
 
-Install MoJu skills from moju-skills repository.
-Default (no arguments): install ALL skills to Claude Code.
+Install Jumo skills from jumo-skills repository.
+Default (no arguments): install ALL skills to Claude Code, Codex, and agent skills (~/.agents/skills).
 
 Arguments:
-  skill-name    Name of the skill to install (e.g., moju-model-understanding)
+  skill-name    Name of the skill to install (e.g., jumo-model-understanding)
   --all          Install ALL skills (default when no skill name given)
 
 Options:
-  --claude       Install to Claude Code (~/.claude/skills/) [default]
+  --claude       Install to Claude Code (~/.claude/skills/)
   --codex        Install to Codex CLI (~/.codex/skills/)
+  --agents       Install to Zed / agent skills (~/.agents/skills/)
   --dir <path>   Install to custom directory
 
 Environment:
-  MOJU_SKILLS_REF     Branch or tag to install from (default: main)
+  JUMO_SKILLS_REF     Branch or tag to install from (default: main)
 
 Examples:
-  $0                              # install all skills to Claude Code
-  $0 moju-model-understanding     # install one skill
+  $0                              # install all skills to Claude Code + Codex + agents
+  $0 jumo-model-understanding     # install one skill
   $0 --all --dir ~/my-skills      # install all skills to custom dir
-  $0 moju-model-align --codex     # install one skill to Codex
+  $0 jumo-model-align --codex     # install one skill to Codex
+  $0 --all --agents               # install all skills to ~/.agents/skills
 
 Available skills:
-  moju-model-understanding — understand current MoJu language concepts and model layout
-  moju-model-align         — sync moju/model and code annotations
-  facts-to-moju-draft      — synthesize moju/draft from facts
-  moju-extract             — extract Rust/Java facts with moju-code extract
-  moju-project-init        — set up MoJu directory structure
+  jumo-model-understanding — understand current Jumo language concepts and model layout
+  jumo-model-align         — sync jumo/model and code annotations
+  jumo-impl-track          — read/write/validate jumo/model/impl/usecases.json (usecase → code mapping)
+  facts-to-jumo-draft      — synthesize jumo/draft from facts
+  jumo-extract             — extract Rust/Java facts with jumo-code extract
+  jumo-code-quality        — generate/interpret code-quality.json (code quality, coverage, module rollups)
+  jumo-project-init        — set up Jumo directory structure
   generated-skeleton-implementation — work inside generated Rust/Java skeletons
   http-rust-axum           — implement HttpRust skeletons
   http-java-spring-boot    — implement Java Spring Boot skeletons
-  moju-codegen-strategy    — choose moju-code generate vs AI, and verify against the model
+  jumo-codegen-strategy    — choose jumo-code generate vs AI, and verify against the model
 EOF
 }
 
 ALL_SKILLS=(
-  moju-model-understanding
-  moju-model-align
-  moju-extract
-  facts-to-moju-draft
-  moju-project-init
+  jumo-model-understanding
+  jumo-model-align
+  jumo-impl-track
+  jumo-extract
+  jumo-code-quality
+  facts-to-jumo-draft
+  jumo-project-init
   generated-skeleton-implementation
   http-rust-axum
   http-java-spring-boot
-  moju-codegen-strategy
+  jumo-codegen-strategy
 )
 
 skill_names=()
@@ -66,6 +72,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --codex)
       target_dirs+=("$HOME/.codex/skills")
+      shift
+      ;;
+    --agents)
+      target_dirs+=("$HOME/.agents/skills")
       shift
       ;;
     --all)
@@ -97,9 +107,9 @@ if [[ ${#skill_names[@]} -eq 0 ]]; then
   skill_names=("${ALL_SKILLS[@]}")
 fi
 
-# Default: install to Claude Code if no platform specified
+# Default: install to all three platforms if none specified
 if [[ ${#target_dirs[@]} -eq 0 ]]; then
-  target_dirs+=("$HOME/.claude/skills")
+  target_dirs+=("$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.agents/skills")
 fi
 
 # Determine repo root (for local install fallback)
@@ -129,14 +139,14 @@ resolve_src() {
   fi
 
   # Clone from GitHub
-  local ref="${MOJU_SKILLS_REF:-main}"
+  local ref="${JUMO_SKILLS_REF:-main}"
 
   if [[ -z "$tmp_dir" ]]; then
-    tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/moju-skills.XXXXXX")"
-    echo "Cloning dayu-sec/moju-skills (ref: $ref)..."
-    if ! git clone --depth 1 --branch "$ref" "https://github.com/dayu-sec/moju-skills.git" "$tmp_dir/repo" 2>/dev/null; then
-      if ! git clone --depth 1 "https://github.com/dayu-sec/moju-skills.git" "$tmp_dir/repo" 2>/dev/null; then
-        echo "Failed to clone dayu-sec/moju-skills" >&2
+    tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/jumo-skills.XXXXXX")"
+    echo "Cloning dayu-sec/jumo-skills (ref: $ref)..."
+    if ! git clone --depth 1 --branch "$ref" "https://github.com/dayu-sec/jumo-skills.git" "$tmp_dir/repo" 2>/dev/null; then
+      if ! git clone --depth 1 "https://github.com/dayu-sec/jumo-skills.git" "$tmp_dir/repo" 2>/dev/null; then
+        echo "Failed to clone dayu-sec/jumo-skills" >&2
         exit 1
       fi
     fi
@@ -171,6 +181,7 @@ for skill_name in "${skill_names[@]}"; do
     case "$target_base" in
       */.codex/skills) platform="codex" ;;
       */.claude/skills) platform="claude-code" ;;
+      */.agents/skills) platform="agents" ;;
     esac
 
     echo "  [$platform] $skill_name"

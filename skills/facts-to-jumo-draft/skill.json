@@ -1,0 +1,38 @@
+{
+  "name": "facts-to-jumo-draft",
+  "version": "2.0.0",
+  "display_name": "Facts To Jumo Draft",
+  "description": "How to synthesize a reviewed Jumo 2.0 jumo/draft model from jumo-code extract facts JSON. Covers static/runtime file separation, runtime service draft output, domain package module splits, typed fields, use cases, subsystems, layout regions, topology, semantic merge, and review output.",
+  "author": "jumo",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "reverse-modeling"],
+  "triggers": {
+    "keywords": [
+      "jumo extract",
+      "facts to jumo",
+      "reverse modeling",
+      "jumo draft",
+      "jumo/draft",
+      "domain package",
+      "module split",
+      "static runtime",
+      "runtime service",
+      "facts.json",
+      "extraction.meta.json",
+      "usecase.mju",
+      "layout.mju",
+      "topology.mju"
+    ],
+    "patterns": [
+      "extract.*fact.*code",
+      "convert.*code.*jumo",
+      "reverse.*model",
+      "create.*jumo.*draft",
+      "synthesize.*jumo"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

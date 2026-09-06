@@ -1,0 +1,46 @@
+{
+  "name": "jumo-model-understanding",
+  "version": "2.0.0",
+  "display_name": "Jumo Model Understanding",
+  "description": "How to understand current Jumo 2.0 language and model concepts when drafting models, reviewing jumo-studio views, or implementing generated code. Covers static domain packages, runtime subsystems/services, module-split files, interfaces, use cases, layout regions, topology, bindings, profiles, and common pitfalls.",
+  "author": "jumo",
+  "license": "MIT",
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "modeling"],
+  "triggers": {
+    "keywords": [
+      "jumo",
+      "model understanding",
+      "domain package",
+      "module split",
+      "static runtime",
+      "runtime service",
+      "module<interface>",
+      "module<entity>",
+      "module<logic>",
+      "domain.mju",
+      "behavior.mju",
+      "architecture.mju",
+      "binding.mju",
+      "usecase.mju",
+      "layout.mju",
+      "topology.mju",
+      "profile.mju",
+      "jumo language",
+      "jumo concept",
+      "jumo syntax",
+      "jumo subsystem",
+      "jumo usecase",
+      "jumo layout",
+      ".mju"
+    ],
+    "patterns": [
+      "how.*jumo.*model.*work",
+      "jumo.*domain concept",
+      "what is.*jumo"
+    ]
+  },
+  "files": {
+    "skill": "SKILL.md"
+  }
+}

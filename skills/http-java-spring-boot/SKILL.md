@@ -1,6 +1,6 @@
 ---
 name: http-java-spring-boot
-description: How to implement MoJu 2.0 runtime service target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.
+description: How to implement Jumo 2.0 runtime service target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.
 triggers:
   - implementing HttpJava
   - target<bin,http> profile java
@@ -16,7 +16,7 @@ Use this skill for `profile HttpJava for ... target<bin,http>` or a generated `r
 ## Read First
 
 - `AI_TASKS.md`
-- `MOJU_MODEL.md`
+- `JUMO_MODEL.md`
 - `src/main/java/*/api/*` (controllers)
 - `src/main/java/*/service/*` (business logic)
 - `src/main/java/*/domain/*` (records, enums)
@@ -36,7 +36,7 @@ Use this skill for `profile HttpJava for ... target<bin,http>` or a generated `r
 - Keep protocol concerns in `api/` package, orchestration in `service/`, and data access in `repository/`.
 - Keep domain entities/states in code generated from `module<entity>` and business rules/policies in code generated from `module<logic>`.
 - Do not treat `module<service>` as the executable boundary; runtime `service` is the process/site/daemon boundary.
-- Use `@MoJu` annotations on all generated domain types (records, enums, exceptions).
+- Use `@Jumo` annotations on all generated domain types (records, enums, exceptions).
 - Wire storage adapters and config properties from `binding.mju`; keep provider-specific code outside controllers.
 
 ## Spring Boot Conventions
@@ -49,12 +49,12 @@ Use this skill for `profile HttpJava for ... target<bin,http>` or a generated `r
 - Main class: `@SpringBootApplication`
 - Build: `mvnw spring-boot:run` or `mvnw package`
 
-## @MoJu Annotation in Java
+## @Jumo Annotation in Java
 
-Generated Java types carry structured MoJu metadata via `@MoJu`:
+Generated Java types carry structured Jumo metadata via `@Jumo`:
 
 ```java
-@MoJu(kind = "message", role = "command", domain = "Business")
+@Jumo(kind = "message", role = "command", domain = "Business")
 public record SubmitOrder(
     String id,
     String customerId
@@ -62,22 +62,22 @@ public record SubmitOrder(
 ```
 
 ```java
-@MoJu(kind = "storage", storageKind = "postgres", domain = "Business")
+@Jumo(kind = "storage", storageKind = "postgres", domain = "Business")
 public record Order(
     @Id Long id,
     String status
 ) {}
 ```
 
-The `@MoJu` annotation interface is auto-generated in the target project. It carries: `kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`.
+The `@Jumo` annotation interface is auto-generated in the target project. It carries: `kind`, `domain`, `role`, `storageKind`, `durability`, `identity`, `tag`.
 
 ## Do Not
 
 - Do not invent HTTP routes or statuses.
 - Do not put storage adapter code in controllers.
-- Do not return a single generic success response when MoJu declares multiple response messages.
+- Do not return a single generic success response when Jumo declares multiple response messages.
 - Do not bypass the service layer from controllers.
-- Do not remove `@MoJu` annotations from generated types.
+- Do not remove `@Jumo` annotations from generated types.
 - Do not ignore actor identity or authorization declarations just because the generated controller compiles.
 
 ## Acceptance
@@ -87,4 +87,4 @@ The `@MoJu` annotation interface is auto-generated in the target project. It car
 - Status codes and response variants match declared outcomes.
 - Config and storage bindings are represented outside the API layer.
 - `mvnw compile` passes.
-- All domain types carry `@MoJu` annotations matching the source model.
+- All domain types carry `@Jumo` annotations matching the source model.

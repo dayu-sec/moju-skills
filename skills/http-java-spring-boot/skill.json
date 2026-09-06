@@ -2,11 +2,11 @@
   "name": "http-java-spring-boot",
   "version": "2.0.0",
   "display_name": "HTTP Java Spring Boot",
-  "description": "How to implement MoJu 2.0 runtime service target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.",
-  "author": "moju",
+  "description": "How to implement Jumo 2.0 runtime service target<bin,http> / HttpJava skeletons with Spring Boot. Covers controller construction, binding.mju routes/statuses/outcomes, actor identity, service wiring, config/storage bindings, and JPA repositories.",
+  "author": "jumo",
   "license": "MIT",
-  "platforms": ["claude-code", "codex"],
-  "categories": ["moju", "implementation", "spring-boot", "java"],
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "implementation", "spring-boot", "java"],
   "triggers": {
     "keywords": [
       "HttpJava",
@@ -17,17 +17,17 @@
       "service.mju",
       "http java",
       "@RestController",
-      "@MoJu annotation",
-      "spring boot moju",
+      "@Jumo annotation",
+      "spring boot jumo",
       "actor_identity",
       "outcome binding"
     ],
     "patterns": [
       "implement.*http.*java",
-      "spring.*boot.*moju",
+      "spring.*boot.*jumo",
       "http.*java.*target",
       "profile.*HttpJava",
-      "java.*controller.*moju"
+      "java.*controller.*jumo"
     ]
   },
   "files": {

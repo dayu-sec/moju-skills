@@ -1,49 +1,53 @@
-# MoJu Skills
+# Jumo Skills
 
-MoJu skills are long-lived AI working rules for drafting MoJu designs and implementing generated skeletons.
+Jumo skills are long-lived AI working rules for drafting Jumo designs and implementing generated skeletons.
 
-They can be installed into `~/.claude/skills/` or `~/.codex/skills/` so coding agents can load them as project-agnostic guidance.
+They can be installed into `~/.claude/skills/`, `~/.codex/skills/`, or `~/.agents/skills/` so coding agents can load them as project-agnostic guidance.
 
 ## Install
 
 ```bash
-# Install from GitHub (default: dayu-sec/moju-skills, main branch)
-./install-skill.sh moju-model-understanding
+# Install from GitHub (default: dayu-sec/jumo-skills, main branch)
+./install-skill.sh jumo-model-understanding
 
 # Install to specific platform
-./install-skill.sh moju-project-init --codex
+./install-skill.sh jumo-project-init --codex
+./install-skill.sh jumo-project-init --agents
 
 # Install all available skills
 ./install-skill.sh --all
 
 # Install to custom directory
-./install-skill.sh facts-to-moju-draft --dir ~/my-skills
+./install-skill.sh facts-to-jumo-draft --dir ~/my-skills
 
 # Install from a specific branch/tag
-MOJU_SKILLS_REF=v1.0 ./install-skill.sh moju-model-understanding
+JUMO_SKILLS_REF=v1.0 ./install-skill.sh jumo-model-understanding
 ```
 
 ## Current Skills
 
 ### Model Reading & Understanding
-- `moju-model-understanding`: how to understand current MoJu 2.0 language concepts, static domain packages, runtime subsystems/services, use cases, layout regions, topology, bindings, and profiles.
+- `jumo-model-understanding`: how to understand current Jumo 2.0 language concepts, static domain packages, runtime subsystems/services, use cases, layout regions, topology, bindings, and profiles.
 
 ### Model-Code Synchronization
-- `moju-model-align`: how to use `moju-code diff` and `moju-code align` to keep `moju/model/` and Rust/Java annotations synchronized.
-- `moju-impl-track`: how to read, write, and validate `moju/model/impl/usecases.json` — the usecase → code entry path mapping — with `moju-code impl-check`.
+- `jumo-model-align`: how to use `jumo-code diff` and `jumo-code align` to keep `jumo/model/` and Rust/Java annotations synchronized.
+- `jumo-impl-track`: how to read, write, and validate `jumo/model/impl/usecases.json` — the usecase → code entry path mapping — with `jumo-code impl-check`.
 
 ### Reverse Modeling
-- `moju-extract`: how to extract Rust/Java facts with `moju-code extract`.
-- `facts-to-moju-draft`: how to synthesize a reviewed `moju/draft` model from `facts.json`.
-- `moju-project-init`: setting up the current MoJu 2.0 `moju/model/` static/runtime directory structure and tooling pipeline for a project.
+- `jumo-extract`: how to extract Rust/Java facts with `jumo-code extract`.
+- `facts-to-jumo-draft`: how to synthesize a reviewed `jumo/draft` model from `facts.json`.
+- `jumo-project-init`: setting up the current Jumo 2.0 `jumo/model/` static/runtime directory structure and tooling pipeline for a project.
 
 ### Skeleton Implementation
-- `generated-skeleton-implementation`: how to work inside Rust or Java skeletons produced by `moju-code generate`.
+- `generated-skeleton-implementation`: how to work inside Rust or Java skeletons produced by `jumo-code generate`.
 - `http-rust-axum`: how to implement runtime service `target<bin,http>` / `HttpRust` skeletons.
 - `http-java-spring-boot`: how to implement runtime service `target<bin,http>` / `HttpJava` Spring Boot skeletons.
 
 ### Code Generation Strategy
-- `moju-codegen-strategy`: decide when to use `moju-code generate` (greenfield — 0 or very little code, large/complete model) vs AI direct code generation (feature increments), and run post-generation initial verification against the model — surfacing differences and asking the engineer for the handling direction.
+- `jumo-codegen-strategy`: decide when to use `jumo-code generate` (greenfield — 0 or very little code, large/complete model) vs AI direct code generation (feature increments), and run post-generation initial verification against the model — surfacing differences and asking the engineer for the handling direction.
+
+### Code Quality
+- `jumo-code-quality`: how to generate and interpret model-independent `code-quality.json` reports with `jumo-code code-quality` — file scale, function complexity, the `modules[]` directory tree with own vs subtree rollups, `cargo llvm-cov` coverage import, thresholds/exclude, and the `--check` CI gate.
 
 ## Rule
 

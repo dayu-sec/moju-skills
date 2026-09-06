@@ -2,15 +2,15 @@
   "name": "generated-skeleton-implementation",
   "version": "2.0.0",
   "display_name": "Generated Skeleton Implementation",
-  "description": "How to work inside Rust or Java skeletons produced by moju-code generate. Covers reading order, MoJu 2.0 static/runtime model layout, runtime services, implementation discipline, annotations, config/storage bindings, and acceptance criteria.",
-  "author": "moju",
+  "description": "How to work inside Rust or Java skeletons produced by jumo-code generate. Covers reading order, Jumo 2.0 static/runtime model layout, runtime services, implementation discipline, annotations, config/storage bindings, and acceptance criteria.",
+  "author": "jumo",
   "license": "MIT",
-  "platforms": ["claude-code", "codex"],
-  "categories": ["moju", "implementation"],
+  "platforms": ["claude-code", "codex", "agents"],
+  "categories": ["jumo", "implementation"],
   "triggers": {
     "keywords": [
-      "moju-code generate",
-      "moju generate",
+      "jumo-code generate",
+      "jumo generate",
       "generated skeleton",
       "domain package",
       "module split",
@@ -18,8 +18,8 @@
       "runtime service",
       "AI_TASKS.md",
       "skeleton implementation",
-      "moju-gen.json",
-      "MOJU_MODEL.md",
+      "jumo-gen.json",
+      "JUMO_MODEL.md",
       "binding.mju",
       "target.mju"
     ],
@@ -27,7 +27,7 @@
       "implement.*skeleton",
       "generated.*crate",
       "generated.*project",
-      "moju.*generate.*implement"
+      "jumo.*generate.*implement"
     ]
   },
   "files": {
