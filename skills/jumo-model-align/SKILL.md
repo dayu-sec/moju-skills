@@ -198,6 +198,18 @@ Every code-facing item in the static domain package belongs to exactly one modul
 - Trigger `command` types — owned by the Interface layer module
 - Error states — owned by the most relevant domain module
 
+#### Not every item needs a module — check before attributing
+
+`jumo-code diff` prints `N model item(s) skipped: the model gives them no module`, and scoped runs then hide those items from every scope. **That count is not a defect list.** The criterion is whether the item is code-facing: if no Rust type corresponds to it, no annotation can ever satisfy it, and inventing a module only records a claim that is false.
+
+Items that legitimately have no module in a directory-per-module model:
+
+- **Actors** declared in a domain-level `actors.mju`. They are cross-cutting (`BusinessAdministrator` authorises many modules) and usually have no Rust type. Verify with `grep -rn "\bActorName\b" <crate>/src` before acting.
+- **UI-layer events** declared in a subsystem layout file (`runtime/subsystem/<name>/layout.*.mju`, an `event X` next to `on activate emit X`). These belong to the UiImpl layer, not to a static module.
+- **Commands that only serve a placeholder verify flow.** If `grep -rn <Command> jumo/model/runtime` shows no usecase referencing it, it is a teaching fixture living beside its `flow` / `verify` in a domain-level `domain.mju`.
+
+What *does* deserve attention is the opposite case: a module listed in some target's `modules` that no crate annotates. In warp-insight's model, `Control.Gateway.Security` and `Control.GatewayApp.Application` were exactly that — annotated in `wist-control` but listed in no target, so every scoped run silently skipped 11 items until they were added to `warp-insight-center`.
+
 ## Runtime Subsystem, Service, And Usecase Awareness
 
 - Subsystem use cases belong in `jumo/model/runtime/subsystem/<name>/usecase.mju`.
