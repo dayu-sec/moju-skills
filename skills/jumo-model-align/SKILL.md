@@ -19,15 +19,26 @@ Use this skill to keep Jumo model files and code annotations consistent.
 
 ## Goal
 
-`jumo-code diff` reports zero differences between `jumo/model/` and code annotations.
+`jumo-code diff` reports zero differences between `jumo/model/` and code annotations —
+per crate, within the part of the model that crate implements (see Scoping below).
 
 ## Direction
 
-```
-jumo/model/ (authoritative)  --align-->  code annotations (mirror)
-```
+There is no fixed direction. The model is the reviewed record of the design, but it
+**does lag behind the code** — implementation often moves first, and the model is
+refreshed to catch up. **Which side moves is the user's call, per session**, not a
+standing rule:
 
-Never the reverse. If code has changed, update the model first through `jumo/draft/`, run `jumo verify`, promote to `jumo/model/`, then align code.
+- Model ahead of code (design was reviewed, code has not caught up): align code to
+the model.
+- Code ahead of model (naming or structure moved during implementation): refresh the
+model through `jumo/draft/`, run `jumo verify`, promote to `jumo/model/`, then align
+code to the updated model.
+
+Never pick a side silently. Say which side you are treating as newer and why, so the
+user can correct you before any file is rewritten. Once the decision is made, the
+model stays the file of record for that session: land the model change first, then
+mirror it into code.
 
 ## The Alignment Loop
 
@@ -39,14 +50,51 @@ jumo-code diff  ->  review gaps  ->  fix model if needed  ->  jumo verify  ->  j
 
 | Step | Command | What it does |
 |------|---------|-------------|
-| 1. diff | `jumo-code diff <project>` | Show what's out of sync |
+| 1. diff | `jumo-code diff <project> [--scope <name>]` | Show what's out of sync |
 | 2. review | read the diff output | Decide: model wrong, or code missing annotations? |
 | 3. fix model | edit `jumo/draft/` or reviewed `jumo/model/` | If model needs updating: add/remove items, fix typed fields, update module owns/subsystems/usecases |
 | 4. verify | `jumo verify` | Ensure `.mju` files parse, flow references resolve, owns are complete |
-| 5. align | `jumo-code align <project> --write` | Push model metadata into code as `#[jumo]` annotations |
+| 5. align | `jumo-code align <project> --write [--scope <name>]` | Push model metadata into code as `#[jumo]` annotations |
 | 6. check | `cargo check` / `mvnw compile` | Ensure annotated code compiles |
 
 If step 2 determines the model is already correct, skip steps 3-4 and go directly to align.
+
+## Scoping: When One Crate Is Not The Whole Model
+
+`jumo-code <cmd> <project>` reads Rust sources from `<project>/src`, so `<project>` is
+a single crate — while the model usually describes the whole system. Comparing one
+crate against the whole model reports every other crate's types as `模型有、代码无`
+(hundreds of entries) and buries the real gaps.
+
+Pass `--scope` to limit the comparison to the modules the crate implements:
+
+```sh
+jumo-code diff  <crate> --model <model-root> --scope <name>
+jumo-code align <crate> --model <model-root> --scope <name> --write
+```
+
+`<name>` resolves in this order, fully qualified (`System.WistCenter`) or by last
+segment (`WistCenter`):
+
+| Kind | Module set comes from | Use when |
+|------|----------------------|----------|
+| `target` | the `target`'s `modules` list | **preferred** — a deployable artifact names exactly what one crate implements |
+| `subsystem` | its `uses module`, plus its `uses service` services' `uses module` | the crate implements a whole subsystem |
+| `service` | that service's `uses module` | the crate implements one runtime service |
+| `module` | that module alone | narrowest |
+
+- Scope is **not** transitive over `module depends`: a dependency belongs to its own
+crate, and following it would re-introduce the noise scoping exists to remove.
+- `diff` prints the resolved scope — kind, module list, and the in-scope / out-of-scope
+/ unattributed counts. Always read it: a scope that resolves to the wrong modules
+still looks like a clean diff.
+- Model items the module map cannot attribute are skipped by every scope. A large
+skipped count means ownership is incomplete; fix that before trusting a scoped diff.
+- An unknown name fails with the candidate list, and a scope resolving to zero modules
+is an error rather than a report of zero differences.
+- `align` honours `--scope` too, so a scoped `diff` followed by a scoped `align` cannot
+push the rest of the model into one crate. **Never run `align --write` unscoped on a
+crate that implements only part of the model.**
 
 ## Diff Output Categories
 
@@ -235,12 +283,14 @@ public record SubmitOrder(String id, String customerId) {}
 | Same diff entries persist after align | Wrong domain/module attribution or stale draft | Check model root, `static/<domain>` names, and owns |
 | align removes annotations | Model no longer owns the type | Add type to module's owns list |
 | Studio shows raw English names only | Missing display metadata | Add `meta { label zh ... label en ... }` |
+| `模型有、代码无` lists hundreds of types from unrelated domains | one crate compared against the whole model | pass `--scope <target\|subsystem\|service\|module>` |
 | Usecase appears in wrong tree node | File placed in wrong scope | Move to `runtime/subsystem/<name>/usecase.mju` or an explicit runtime root usecase file |
 | Service-only subsystem opens an empty layer diagram | Runtime service counted as static module | Add `uses module` for static layer views or inspect runtime service/topology views |
 
 ## Do
 
-- Model is always the source of truth. Change it first, then align code.
+- Decide with the user which side is newer before rewriting anything (see Direction), then land that change first and mirror it.
+- Pass `--scope` for any crate that implements only part of the model, and read the resolved scope before trusting the diff.
 - Run `diff` before and after every alignment session.
 - Use `--check` before `--write` to preview changes.
 - Keep `jumo/model/` as the reviewed source and remove stale drafts after promotion.
@@ -249,6 +299,7 @@ public record SubmitOrder(String id, String customerId) {}
 ## Do Not
 
 - Do not run `align --write` blindly. Understand why each difference exists first.
+- Do not pick a direction on the user's behalf. The model is not unconditionally authoritative — it is allowed to lag behind the code.
 - Do not add `#[jumo]` / `@Jumo` to types that are pure implementation details.
 - Do not delete model types just to make diff pass.
 - Do not let a single module own >15 types — split by business responsibility.
